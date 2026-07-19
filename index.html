@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Habit Tracker">
+<title>Habit Tracker</title>
+<link rel="manifest" href="./manifest.json">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-bg: #f8f7fc;
+    --color-surface: #ffffff;
+    --color-primary: #4f46e5;
+    --color-primary-hover: #4338ca;
+    --color-text: #1e1b4b;
+    --color-text-secondary: #6b7280;
+    --color-border: #e5e7eb;
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+    --color-danger-bg: #fef2f2;
+    --color-streak-bg: #eef2ff;
+    --color-streak-zero-bg: #f3f4f6;
+    --color-nav-active-bg: #f3f4f6;
+    --color-overlay: rgba(0,0,0,.35);
+    --color-toast-bg: #1e1b4b;
+    --color-toast-text: #fff;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  /* ── Dark Mode ── */
+  [data-theme="dark"] {
+    --color-bg: #0f0f1a;
+    --color-surface: #1a1a2e;
+    --color-primary: #818cf8;
+    --color-primary-hover: #6366f1;
+    --color-text: #e2e8f0;
+    --color-text-secondary: #94a3b8;
+    --color-border: #2d2d4a;
+    --color-success: #34d399;
+    --color-danger: #f87171;
+    --color-danger-bg: #2d1f1f;
+    --color-streak-bg: #1e1b4b;
+    --color-streak-zero-bg: #2a2a3e;
+    --color-nav-active-bg: #2a2a3e;
+    --color-overlay: rgba(0,0,0,.6);
+    --color-toast-bg: #e2e8f0;
+    --color-toast-text: #1e1b4b;
+    --shadow: 0 1px 3px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.15);
+  }
+  [data-theme="dark"] input::placeholder { color: #6b7280; }
+  [data-theme="dark"] .month-nav-btn { background: var(--color-surface); }
+  [data-theme="dark"] .view-toggle button { background: var(--color-surface); }
+  [data-theme="dark"] .btn-outline { background: var(--color-surface); }
+
+  html { height: 100%; }
+  body {
+    font-family: var(--font);
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100%;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+    padding: 20px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px 0;
+    gap: 8px;
+  }
+  .header-left { display: flex; align-items: center; gap: 8px; }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--color-text);
+  }
+  .header-date {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+  .theme-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    touch-action: manipulation;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, transform .1s;
+    flex-shrink: 0;
+  }
+  .theme-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
+
+  /* ── Add Habit ── */
+  .add-form {
+    display: flex;
+    gap: 10px;
+  }
+  .add-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: var(--font);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .add-form input:focus {
+    border-color: var(--color-primary);
+  }
+  .add-form input::placeholder {
+    color: #9ca3af;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 22px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background .15s, transform .1s;
+    white-space: nowrap;
+    min-height: 48px;
+    min-width: 48px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: var(--color-primary);
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-text-secondary);
+    padding: 8px 12px;
+    min-height: 44px;
+  }
+  .btn-danger {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+  }
+  .btn-outline {
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* ── Habits List ── */
+  .habits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--color-text-secondary);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; line-height: 1.5; }
+
+  /* ── Habit Card ── */
+  .habit-card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid var(--color-border);
+    transition: border-color .2s;
+  }
+  .habit-card.swiped {
+    border-color: var(--color-danger);
+  }
+  .habit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .habit-name {
+    font-size: 17px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .habit-streak {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-primary);
+    background: var(--color-streak-bg);
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .habit-streak.zero { color: var(--color-text-secondary); background: var(--color-streak-zero-bg); }
+
+  /* ── Day Dots ── */
+  .day-grid {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .day-dot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    touch-action: manipulation;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    transition: background .15s, border-color .15s, color .15s, transform .1s;
+    flex-shrink: 0;
+  }
+  .day-dot:active { transform: scale(.92); }
+  .day-dot.done {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+  .day-dot.today { border-color: var(--color-primary); border-width: 2.5px; }
+  .day-labels {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
+  }
+  .day-label {
+    width: 40px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* ── Month Nav ── */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .month-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    touch-action: manipulation;
+    font-size: 16px;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .month-nav-btn:active { background: var(--color-nav-active-bg); }
+  .month-nav-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text);
+    min-width: 130px;
+    text-align: center;
+  }
+
+  /* ── Calendar Grid ── */
+  .calendar { width: 100%; }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    touch-action: manipulation;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    transition: background .15s, border-color .15s, color .15s, transform .1s;
+  }
+  .cal-cell:active { transform: scale(.92); }
+  .cal-cell.done {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+  .cal-cell.today { border-color: var(--color-primary); border-width: 2.5px; }
+  .cal-cell.empty {
+    border-color: transparent;
+    background: transparent;
+    cursor: default;
+    pointer-events: none;
+  }
+  .cal-cell.empty:active { transform: none; }
+
+  /* ── View Toggle ── */
+  .view-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1.5px solid var(--color-border);
+  }
+  .view-toggle button {
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    border: none;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background .15s, color .15s;
+    min-height: 34px;
+  }
+  .view-toggle button.active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+
+  /* ── Card Actions ── */
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .card-actions .btn {
+    font-size: 13px;
+    padding: 8px 14px;
+    min-height: 36px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Footer ── */
+  .footer {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
+  }
+  .footer .btn { font-size: 14px; flex: 1; max-width: 200px; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--color-toast-bg);
+    color: var(--color-toast-text);
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font);
+    z-index: 100;
+    opacity: 0;
+    transition: transform .25s ease, opacity .25s ease;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* ── Confirm Dialog ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .dialog {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+  }
+  .dialog h3 { font-size: 18px; margin-bottom: 8px; }
+  .dialog p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px; }
+  .dialog .btn-row { display: flex; gap: 10px; justify-content: center; }
+
+  /* ── Import input hidden ── */
+  #importFile { display: none; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="header">
+    <div class="header-left">
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">☀️</button>
+      <h1>Habits</h1>
+    </div>
+    <span class="header-date" id="headerDate"></span>
+  </header>
+
+  <form class="add-form" id="addForm" autocomplete="off">
+    <input type="text" id="habitInput" placeholder="New habit…" maxlength="80" aria-label="New habit name">
+    <button type="submit" class="btn btn-primary" aria-label="Add habit">Add</button>
+  </form>
+
+  <div class="habits-list" id="habitsList"></div>
+
+  <div class="footer">
+    <button class="btn btn-outline" id="exportBtn" aria-label="Export data">Export</button>
+    <button class="btn btn-outline" id="importBtn" aria-label="Import data">Import</button>
+    <input type="file" id="importFile" accept=".json,application/json">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="confirmOverlay">
+  <div class="dialog">
+    <h3 id="confirmTitle">Delete habit?</h3>
+    <p id="confirmMsg">This cannot be undone.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────
+   Habit Tracker — single-file PWA
+   ───────────────────────────────────── */
+
+// ── DOM refs ──
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+
+const habitsList  = $('#habitsList');
+const addForm     = $('#addForm');
+const habitInput  = $('#habitInput');
+const headerDate  = $('#headerDate');
+const toastEl     = $('#toast');
+const overlay     = $('#confirmOverlay');
+const confirmTitle= $('#confirmTitle');
+const confirmMsg  = $('#confirmMsg');
+const confirmOk   = $('#confirmOk');
+const confirmCancel = $('#confirmCancel');
+const exportBtn   = $('#exportBtn');
+const importBtn   = $('#importBtn');
+const importFile  = $('#importFile');
+const themeBtn    = $('#themeBtn');
+
+// ── State ──
+const STORAGE_KEY = 'habits_v1';
+let state = { version: 1, habits: [] };
+let confirmResolve = null;
+
+// ── Helpers ──
+// YYYY-MM-DD in local time (per spec: never store timestamps)
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+const today = () => fmtDate(new Date());
+
+function dateAdd(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return fmtDate(d);
+}
+
+function dayName(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2).toUpperCase();
+}
+
+function idShort(id) { return id.slice(0, 5); }
+
+// ── Streak ──
+// Count consecutive completed days ending today (or yesterday if today not done).
+// Actually, per spec: "consecutive days up to today". Count backwards from today.
+function calcStreak(completed) {
+  const set = new Set(completed);
+  let t = today();
+  // If today is not completed, check if yesterday is; if not, streak is 0.
+  if (!set.has(t)) {
+    t = dateAdd(t, -1);
+    if (!set.has(t)) return 0;
+  }
+  let count = 0;
+  while (set.has(t)) {
+    count++;
+    t = dateAdd(t, -1);
+  }
+  return count;
+}
+
+// ── Persistence ──
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.version === 1 && Array.isArray(parsed.habits)) {
+      state = parsed;
+    }
+  } catch (e) { /* corrupt data — start fresh */ }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    toast('Could not save — storage full?');
+  }
+}
+
+function persistStorage() {
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(granted => {
+      if (!granted) console.warn('Storage persist denied — export your data regularly.');
+    });
+  }
+}
+
+// ── Export / Import ──
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `habits-backup-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported!');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || data.version !== 1 || !Array.isArray(data.habits)) {
+        throw new Error('Invalid format');
+      }
+      state = data;
+      saveState();
+      render();
+      toast('Imported!');
+    } catch (e) {
+      toast('Invalid file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Confirm dialog ──
+function confirm(title, msg) {
+  return new Promise(resolve => {
+    confirmTitle.textContent = title;
+    confirmMsg.textContent = msg;
+    confirmResolve = resolve;
+    overlay.classList.add('open');
+  });
+}
+
+function closeConfirm(result) {
+  overlay.classList.remove('open');
+  if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+}
+
+confirmOk.addEventListener('click', () => closeConfirm(true));
+confirmCancel.addEventListener('click', () => closeConfirm(false));
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeConfirm(false); });
+
+// ── Toast ──
+let toastTimer;
+function toast(msg) {
+  clearTimeout(toastTimer);
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+// ── View state (per habit, in memory only) ──
+const viewMode   = new Map();  // habitId → 'week' | 'month'
+const monthOffset = new Map(); // habitId → number (0 = current month)
+
+function getViewMode(habitId) {
+  return viewMode.get(habitId) || 'week';
+}
+function getMonthOffset(habitId) {
+  return monthOffset.get(habitId) || 0;
+}
+
+// ── Calendar helpers ──
+function monthYearLabel(offset) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function buildCalendar(offset) {
+  const now = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth() + offset;
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0);
+  const totalDays = lastDay.getDate();
+  const startDow = firstDay.getDay(); // 0 = Sunday
+
+  const cells = [];
+  // Leading empty cells
+  for (let i = 0; i < startDow; i++) {
+    cells.push({ date: null, empty: true });
+  }
+  // Day cells
+  for (let d = 1; d <= totalDays; d++) {
+    const dateStr = fmtDate(new Date(year, month, d));
+    cells.push({ date: dateStr, empty: false, dayNum: d });
+  }
+
+  return { year, month, cells, startDow, totalDays };
+}
+
+// ── Render ──
+function render() {
+  headerDate.textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric'
+  });
+
+  if (state.habits.length === 0) {
+    habitsList.innerHTML = `<div class="empty-state">
+      <div class="icon">&#x1F4AA;</div>
+      <p>No habits yet.<br>Add one to get started.</p>
+    </div>`;
+    return;
+  }
+
+  habitsList.innerHTML = state.habits.map(h => {
+    const completedSet = new Set(h.completed);
+    const streak = calcStreak(h.completed);
+    const isToday = today();
+    const mode = getViewMode(h.id);
+    const offset = getMonthOffset(h.id);
+
+    let bodyHtml;
+    if (mode === 'month') {
+      const cal = buildCalendar(offset);
+      const calCellsHtml = cal.cells.map(c => {
+        if (c.empty) return '<span class="cal-cell empty"></span>';
+        const done = completedSet.has(c.date);
+        const isT = c.date === isToday;
+        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}"
+          data-habit="${h.id}" data-date="${c.date}"
+          aria-label="${c.date}${done ? ' done' : ''}">${c.dayNum}</button>`;
+      }).join('');
+
+      bodyHtml = `
+        <div class="month-nav">
+          <button class="month-nav-btn" data-month-prev="${h.id}" aria-label="Previous month">&#8249;</button>
+          <span class="month-nav-label">${monthYearLabel(offset)}</span>
+          <button class="month-nav-btn" data-month-next="${h.id}" aria-label="Next month">&#8250;</button>
+        </div>
+        <div class="calendar">
+          <div class="calendar-grid">${calCellsHtml}</div>
+        </div>`;
+    } else {
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        days.push(dateAdd(today(), -i));
+      }
+      const dotsHtml = days.map(d => {
+        const done = completedSet.has(d);
+        const isT = d === isToday;
+        return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}"
+          data-habit="${h.id}" data-date="${d}"
+          aria-label="${d} ${done ? 'done' : 'not done'}${isT ? ' (today)' : ''}"
+          title="${d}">${dayName(d)}</button>`;
+      }).join('');
+      bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
+    }
+
+    return `<div class="habit-card" id="card-${h.id}">
+      <div class="habit-row">
+        <span class="habit-name" title="${h.name}">${h.name}</span>
+        <span class="habit-streak${streak === 0 ? ' zero' : ''}">
+          &#x1F525; ${streak}
+        </span>
+      </div>
+      ${bodyHtml}
+      <div class="card-actions">
+        <div class="view-toggle">
+          <button data-view-week="${h.id}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
+          <button data-view-month="${h.id}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
+        </div>
+        <button class="btn btn-danger" data-delete="${h.id}">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Attach events
+  habitsList.querySelectorAll('.day-dot').forEach(btn => {
+    btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
+  });
+  habitsList.querySelectorAll('.cal-cell').forEach(btn => {
+    btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
+  });
+  habitsList.querySelectorAll('[data-month-prev]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hid = btn.dataset.monthPrev;
+      monthOffset.set(hid, getMonthOffset(hid) - 1);
+      render();
+    });
+  });
+  habitsList.querySelectorAll('[data-month-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hid = btn.dataset.monthNext;
+      monthOffset.set(hid, getMonthOffset(hid) + 1);
+      render();
+    });
+  });
+  habitsList.querySelectorAll('[data-view-week]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewMode.set(btn.dataset.viewWeek, 'week');
+      render();
+    });
+  });
+  habitsList.querySelectorAll('[data-view-month]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      viewMode.set(btn.dataset.viewMonth, 'month');
+      render();
+    });
+  });
+  habitsList.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.addEventListener('click', () => deleteHabit(btn.dataset.delete));
+  });
+}
+
+// ── Actions ──
+function addHabit(name) {
+  name = name.trim();
+  if (!name) return;
+  // crypto.randomUUID() is supported in all modern browsers
+  const id = crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10);
+  state.habits.push({
+    id: 'h_' + id,
+    name,
+    createdAt: today(),
+    completed: []
+  });
+  saveState();
+  render();
+}
+
+function toggleDay(habitId, dateStr) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  const idx = habit.completed.indexOf(dateStr);
+  if (idx > -1) {
+    habit.completed.splice(idx, 1);
+  } else {
+    habit.completed.push(dateStr);
+    habit.completed.sort();
+  }
+  saveState();
+  render();
+}
+
+async function deleteHabit(habitId) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  const ok = await confirm('Delete habit?', `"${habit.name}" will be permanently removed.`);
+  if (!ok) return;
+  state.habits = state.habits.filter(h => h.id !== habitId);
+  saveState();
+  render();
+  toast(`Deleted "${habit.name}"`);
+}
+
+// ── Event listeners ──
+addForm.addEventListener('submit', e => {
+  e.preventDefault();
+  addHabit(habitInput.value);
+  habitInput.value = '';
+  habitInput.focus();
+});
+
+themeBtn.addEventListener('click', toggleTheme);
+exportBtn.addEventListener('click', exportData);
+importBtn.addEventListener('click', () => importFile.click());
+importFile.addEventListener('change', () => {
+  if (importFile.files.length) {
+    importData(importFile.files[0]);
+    importFile.value = '';
+  }
+});
+
+// ── Keyboard shortcut for add ──
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    habitInput.focus();
+  }
+});
+
+// ── Theme ──
+const THEME_KEY = 'theme';
+
+function getTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'dark' || stored === 'light') return stored;
+  // No stored preference — check system
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  return 'light';
+}
+
+function applyTheme(theme) {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (theme === 'dark') {
+    document.documentElement.dataset.theme = 'dark';
+    themeBtn.textContent = '🌙';
+    if (meta) meta.content = '#0f0f1a';
+  } else {
+    delete document.documentElement.dataset.theme;
+    themeBtn.textContent = '☀️';
+    if (meta) meta.content = '#4f46e5';
+  }
+}
+
+function toggleTheme() {
+  const current = getTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+// Listen for system theme changes (only applies when no manual override)
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (!localStorage.getItem(THEME_KEY)) {
+      applyTheme(getTheme());
+    }
+  });
+}
+
+// ── Init ──
+function init() {
+  loadState();
+  applyTheme(getTheme());
+  persistStorage();
+  render();
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
