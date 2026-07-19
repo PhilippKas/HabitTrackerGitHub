@@ -214,6 +214,34 @@
   .habit-card.swiped {
     border-color: var(--color-danger);
   }
+  .habit-card.dragging {
+    opacity: 0.92;
+    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+    z-index: 50;
+    position: relative;
+    transition: box-shadow .15s;
+  }
+  .habit-card.drag-over {
+    border-color: var(--color-primary);
+    border-style: dashed;
+  }
+
+  /* ── Drag Handle ── */
+  .drag-handle {
+    cursor: grab;
+    touch-action: none;
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    padding: 2px 6px 2px 0;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    letter-spacing: 2px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .drag-handle:active { cursor: grabbing; }
   .habit-row {
     display: flex;
     align-items: center;
@@ -794,7 +822,7 @@ function buildCalendar(offset) {
   const firstDay = new Date(year, month, 1);
   const lastDay  = new Date(year, month + 1, 0);
   const totalDays = lastDay.getDate();
-  const startDow = firstDay.getDay(); // 0 = Sunday
+  const startDow = (firstDay.getDay() + 6) % 7; // 0 = Monday
 
   const cells = [];
   // Leading empty cells
@@ -853,9 +881,12 @@ function render() {
           <div class="calendar-grid">${calCellsHtml}</div>
         </div>`;
     } else {
+      // This week Monday–Sunday
+      const dayOfWeek = (new Date().getDay() + 6) % 7; // 0=Mon
+      const monday = dateAdd(today(), -dayOfWeek);
       const days = [];
-      for (let i = 6; i >= 0; i--) {
-        days.push(dateAdd(today(), -i));
+      for (let i = 0; i < 7; i++) {
+        days.push(dateAdd(monday, i));
       }
       const dotsHtml = days.map(d => {
         const done = completedSet.has(d);
@@ -870,6 +901,7 @@ function render() {
 
     return `<div class="habit-card" id="card-${h.id}">
       <div class="habit-row">
+        <span class="drag-handle" data-drag="${h.id}" aria-label="Drag to reorder">⋮⋮</span>
         <span class="habit-name" title="${h.name}">${h.name}</span>
         <span class="habit-streak${streak === 0 ? ' zero' : ''}">
           &#x1F525; ${streak}
@@ -923,6 +955,109 @@ function render() {
     btn.addEventListener('click', () => deleteHabit(btn.dataset.delete));
   });
 }
+
+// ── Drag-and-drop reorder ──
+let dragState = null; // { habitId, startY, currentY, el, offsetY }
+
+function getCardCenter(el) {
+  const rect = el.getBoundingClientRect();
+  return rect.top + rect.height / 2;
+}
+
+habitsList.addEventListener('pointerdown', e => {
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return;
+  e.preventDefault();
+
+  const card = handle.closest('.habit-card');
+  if (!card) return;
+
+  card.setPointerCapture(e.pointerId);
+  dragState = {
+    habitId: handle.dataset.drag,
+    startY: e.clientY,
+    currentY: e.clientY,
+    el: card,
+    offsetY: e.clientY - card.getBoundingClientRect().top,
+  };
+  card.classList.add('dragging');
+});
+
+habitsList.addEventListener('pointermove', e => {
+  if (!dragState) return;
+  e.preventDefault();
+
+  dragState.currentY = e.clientY;
+  const dy = e.clientY - dragState.startY;
+  dragState.el.style.transform = `translateY(${dy}px)`;
+
+  // Highlight the card we're hovering over
+  const cards = [...habitsList.querySelectorAll('.habit-card')];
+  const myCenter = dragState.el.getBoundingClientRect().top + dragState.el.offsetHeight / 2;
+
+  cards.forEach(c => {
+    c.classList.remove('drag-over');
+    if (c === dragState.el) return;
+    const cCenter = getCardCenter(c);
+    const dist = Math.abs(myCenter - cCenter);
+    if (dist < c.offsetHeight / 2) {
+      c.classList.add('drag-over');
+    }
+  });
+});
+
+habitsList.addEventListener('pointerup', e => {
+  if (!dragState) return;
+  const card = dragState.el;
+  card.classList.remove('dragging');
+  card.style.transform = '';
+
+  // Find drop position
+  const cards = [...habitsList.querySelectorAll('.habit-card')];
+  cards.forEach(c => c.classList.remove('drag-over'));
+
+  const draggedId = dragState.habitId;
+  const myCenter = card.getBoundingClientRect().top + card.offsetHeight / 2;
+
+  // Find the card whose center we passed (excluding the dragged card)
+  let insertAfterIdx = -1;
+  for (let i = 0; i < cards.length; i++) {
+    if (cards[i] === card) continue;
+    if (myCenter > getCardCenter(cards[i])) {
+      insertAfterIdx = i;
+    }
+  }
+
+  // Reorder the state array
+  const draggedIdx = state.habits.findIndex(h => h.id === draggedId);
+  if (draggedIdx === -1) { dragState = null; return; }
+
+  const [item] = state.habits.splice(draggedIdx, 1);
+
+  // Map DOM position back to array position (accounting for removed item)
+  let targetArrayIdx;
+  if (insertAfterIdx === -1) {
+    targetArrayIdx = 0; // insert at beginning
+  } else {
+    // The card at insertAfterIdx in DOM — find its array index
+    const afterId = cards[insertAfterIdx].id.replace('card-', '');
+    const afterIdx = state.habits.findIndex(h => h.id === afterId);
+    targetArrayIdx = afterIdx + 1;
+  }
+
+  state.habits.splice(targetArrayIdx, 0, item);
+  dragState = null;
+  saveState();
+  render();
+});
+
+habitsList.addEventListener('pointercancel', () => {
+  if (!dragState) return;
+  dragState.el.classList.remove('dragging');
+  dragState.el.style.transform = '';
+  habitsList.querySelectorAll('.habit-card').forEach(c => c.classList.remove('drag-over'));
+  dragState = null;
+});
 
 // ── Actions ──
 function addHabit(name) {
