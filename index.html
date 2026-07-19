@@ -457,6 +457,95 @@
 
   /* ── Import input hidden ── */
   #importFile { display: none; }
+
+  /* ── Login Overlay ── */
+  .login-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--color-bg);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-card {
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--color-border);
+    text-align: center;
+  }
+  .login-card .icon { font-size: 40px; margin-bottom: 8px; }
+  .login-card h2 { font-size: 20px; margin-bottom: 4px; color: var(--color-text); }
+  .login-card p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px; }
+  .login-card input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: var(--font);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color .15s;
+    margin-bottom: 12px;
+  }
+  .login-card input:focus { border-color: var(--color-primary); }
+  .login-card .btn { width: 100%; }
+  .login-error {
+    color: var(--color-danger);
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 20px;
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .login-error.show { opacity: 1; }
+  .login-error.shake {
+    animation: shake .4s ease;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .login-setup-msg {
+    font-size: 13px;
+    color: #92400e;
+    background: #fef3c7;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    line-height: 1.5;
+    display: none;
+  }
+  .login-setup-msg.show { display: block; }
+
+  /* ── Lock Button ── */
+  .lock-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    cursor: pointer;
+    touch-action: manipulation;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, transform .1s;
+    flex-shrink: 0;
+  }
+  .lock-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
 </style>
 </head>
 <body>
@@ -464,6 +553,7 @@
   <header class="header">
     <div class="header-left">
       <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">☀️</button>
+      <button class="lock-btn" id="lockBtn" aria-label="Lock app">🔒</button>
       <h1>Habits</h1>
     </div>
     <span class="header-date" id="headerDate"></span>
@@ -480,6 +570,22 @@
     <button class="btn btn-outline" id="exportBtn" aria-label="Export data">Export</button>
     <button class="btn btn-outline" id="importBtn" aria-label="Import data">Import</button>
     <input type="file" id="importFile" accept=".json,application/json">
+  </div>
+</div>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="icon">&#x1F512;</div>
+    <h2>Unlock</h2>
+    <p>Enter your password to access your habits.</p>
+    <form id="loginForm" autocomplete="off">
+      <input type="password" id="loginInput" placeholder="Password" autocomplete="current-password" aria-label="Password">
+      <div class="login-error" id="loginError">Wrong password</div>
+      <button type="submit" class="btn btn-primary">Unlock</button>
+    </form>
+    <div class="login-setup-msg" id="loginSetupMsg">
+      <strong>Setup needed:</strong> Open <code>generate-password.html</code>, choose a password, and paste the hash + salt into <code>index.html</code>. Then re-deploy.
+    </div>
   </div>
 </div>
 
@@ -501,6 +607,11 @@
    Habit Tracker — single-file PWA
    ───────────────────────────────────── */
 
+// ── Password config ──────────────────
+const PASSWORD_HASH = "f8188c8af9886651aebe91f47c948361804ddfc6d152ed1fffdfb50b8a1466be";
+const PASSWORD_SALT = "2071d60d3a3775d542d2b78852d75df7ee88fd428fa274ddb38689342e746359";
+const UNLOCK_KEY = 'habits_unlocked';
+
 // ── DOM refs ──
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -519,6 +630,12 @@ const exportBtn   = $('#exportBtn');
 const importBtn   = $('#importBtn');
 const importFile  = $('#importFile');
 const themeBtn    = $('#themeBtn');
+const loginOverlay = $('#loginOverlay');
+const loginForm   = $('#loginForm');
+const loginInput  = $('#loginInput');
+const loginError  = $('#loginError');
+const loginSetupMsg = $('#loginSetupMsg');
+const lockBtn     = $('#lockBtn');
 
 // ── State ──
 const STORAGE_KEY = 'habits_v1';
@@ -874,6 +991,73 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── Password gate ──
+function isConfigured() {
+  return PASSWORD_HASH !== 'PLACEHOLDER' && PASSWORD_SALT !== 'PLACEHOLDER';
+}
+
+function isUnlocked() {
+  return sessionStorage.getItem(UNLOCK_KEY) === '1';
+}
+
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + PASSWORD_SALT);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function tryUnlock(password) {
+  if (!isConfigured()) return false;
+  const hash = await hashPassword(password);
+  return hash === PASSWORD_HASH;
+}
+
+function showLogin() {
+  loginOverlay.classList.remove('hidden');
+  loginInput.value = '';
+  loginError.classList.remove('show', 'shake');
+  // Show setup message if hash not configured
+  if (isConfigured()) {
+    loginSetupMsg.classList.remove('show');
+    loginForm.style.display = '';
+  } else {
+    loginSetupMsg.classList.add('show');
+    loginForm.style.display = 'none';
+  }
+}
+
+function hideLogin() {
+  loginOverlay.classList.add('hidden');
+}
+
+function lockApp() {
+  sessionStorage.removeItem(UNLOCK_KEY);
+  showLogin();
+}
+
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = loginInput.value;
+  if (!pw) return;
+
+  const ok = await tryUnlock(pw);
+  if (ok) {
+    sessionStorage.setItem(UNLOCK_KEY, '1');
+    hideLogin();
+    render();
+  } else {
+    loginError.classList.remove('shake');
+    void loginError.offsetWidth; // reflow to restart animation
+    loginError.classList.add('show', 'shake');
+    loginInput.value = '';
+    loginInput.focus();
+  }
+});
+
+lockBtn.addEventListener('click', lockApp);
+
 // ── Theme ──
 const THEME_KEY = 'theme';
 
@@ -919,6 +1103,13 @@ function init() {
   loadState();
   applyTheme(getTheme());
   persistStorage();
+
+  if (!isUnlocked()) {
+    showLogin();
+    return;
+  }
+
+  hideLogin();
   render();
 
   // Register service worker
