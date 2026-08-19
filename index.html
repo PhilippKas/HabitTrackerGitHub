@@ -29,6 +29,8 @@
     --color-overlay: rgba(0,0,0,.35);
     --color-toast-bg: #1e1b4b;
     --color-toast-text: #fff;
+    --pinup-bg: #ffe9ec;
+    --pinup-fig: #1e1b4b;
     --radius: 14px;
     --radius-sm: 8px;
     --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
@@ -53,6 +55,8 @@
     --color-overlay: rgba(0,0,0,.6);
     --color-toast-bg: #e2e8f0;
     --color-toast-text: #1e1b4b;
+    --pinup-bg: #2a2a3e;
+    --pinup-fig: #e2e8f0;
     --shadow: 0 1px 3px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.15);
   }
   [data-theme="dark"] input::placeholder { color: #6b7280; }
@@ -221,10 +225,6 @@
     position: relative;
     transition: box-shadow .15s;
   }
-  .habit-card.drag-over {
-    border-color: var(--color-primary);
-    border-style: dashed;
-  }
 
   /* ── Drag Handle ── */
   .drag-handle {
@@ -232,14 +232,18 @@
     touch-action: none;
     font-size: 15px;
     color: var(--color-text-secondary);
-    padding: 2px 6px 2px 0;
+    padding: 6px 10px 6px 2px;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
     display: flex;
     align-items: center;
+    justify-content: center;
     letter-spacing: 2px;
     line-height: 1;
     flex-shrink: 0;
+    min-width: 36px;
+    min-height: 44px;
   }
   .drag-handle:active { cursor: grabbing; }
   .habit-row {
@@ -416,8 +420,32 @@
   .card-actions {
     display: flex;
     gap: 6px;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
   }
+  .card-actions-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .reorder-btns { display: flex; gap: 4px; }
+  .mini-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    touch-action: manipulation;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .mini-btn:active { background: var(--color-nav-active-bg); }
   .card-actions .btn {
     font-size: 13px;
     padding: 8px 14px;
@@ -486,94 +514,144 @@
   /* ── Import input hidden ── */
   #importFile { display: none; }
 
-  /* ── Login Overlay ── */
-  .login-overlay {
+  /* ── Privacy Shield (hide button) ── */
+  .shield {
     position: fixed;
     inset: 0;
     background: var(--color-bg);
-    z-index: 999;
-    display: flex;
+    z-index: 1000;
+    display: none;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .login-overlay.hidden { display: none; }
-  .login-card {
-    background: var(--color-surface);
-    border-radius: var(--radius);
-    padding: 32px 24px;
-    width: 100%;
-    max-width: 360px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--color-border);
-    text-align: center;
-  }
-  .login-card .icon { font-size: 40px; margin-bottom: 8px; }
-  .login-card h2 { font-size: 20px; margin-bottom: 4px; color: var(--color-text); }
-  .login-card p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px; }
-  .login-card input {
-    width: 100%;
-    padding: 14px 16px;
-    font-size: 16px;
-    font-family: var(--font);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-bg);
-    color: var(--color-text);
-    outline: none;
-    transition: border-color .15s;
-    margin-bottom: 12px;
-  }
-  .login-card input:focus { border-color: var(--color-primary); }
-  .login-card .btn { width: 100%; }
-  .login-error {
-    color: var(--color-danger);
-    font-size: 13px;
+  .shield.show { display: flex; }
+  .shield-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
     font-weight: 600;
-    min-height: 20px;
-    margin-bottom: 8px;
-    opacity: 0;
-    transition: opacity .15s;
+    color: var(--color-text-secondary);
+    opacity: .35;
+    pointer-events: none;
   }
-  .login-error.show { opacity: 1; }
-  .login-error.shake {
-    animation: shake .4s ease;
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-8px); }
-    40% { transform: translateX(8px); }
-    60% { transform: translateX(-6px); }
-    80% { transform: translateX(6px); }
-  }
-  .login-setup-msg {
-    font-size: 13px;
-    color: #92400e;
-    background: #fef3c7;
-    padding: 12px;
-    border-radius: var(--radius-sm);
-    line-height: 1.5;
-    display: none;
-  }
-  .login-setup-msg.show { display: block; }
+  .shield-hint .icon { font-size: 28px; }
 
-  /* ── Lock Button ── */
-  .lock-btn {
-    width: 36px;
-    height: 36px;
+  /* ── Hide Button ── */
+  .hide-btn {
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 1.5px solid var(--color-border);
     background: var(--color-surface);
     cursor: pointer;
     touch-action: manipulation;
-    font-size: 16px;
+    font-size: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background .15s, transform .1s;
     flex-shrink: 0;
   }
-  .lock-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
+  .hide-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
+
+  /* ── Pin-up Corner ── */
+  .pinup-strip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+    padding: 12px 14px;
+    border: 2px dashed var(--color-border);
+    border-radius: 18px;
+    background: var(--color-surface);
+  }
+  .pinup-strip.hidden { display: none; }
+  .pinup-slot {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border);
+    background: var(--pinup-bg);
+    cursor: pointer;
+    touch-action: manipulation;
+    padding: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .pinup-slot:active { transform: scale(.94); }
+  .pinup-slot svg { width: 100%; height: 100%; display: block; color: var(--pinup-fig); fill: currentColor; }
+  .pinup-img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ── Settings Dialog ── */
+  .settings-dialog { max-width: 340px; text-align: left; }
+  .settings-dialog h3 { margin-bottom: 4px; text-align: center; }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .setting-label { font-size: 14px; font-weight: 600; color: var(--color-text); }
+  .setting-label small {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+    margin-top: 3px;
+    max-width: 180px;
+  }
+  .settings-dialog input[type="time"] {
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: var(--font);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    outline: none;
+    flex-shrink: 0;
+    min-height: 44px;
+    max-width: 120px;
+  }
+  [data-theme="dark"] input[type="time"] { color-scheme: dark; }
+  .settings-dialog > .btn { width: 100%; margin-top: 12px; }
+
+  /* ── Toggle switch ── */
+  .switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--color-border);
+    border-radius: 28px;
+    transition: background .2s;
+    cursor: pointer;
+  }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .switch input:checked + .slider { background: var(--color-primary); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
 </style>
 </head>
 <body>
@@ -581,7 +659,7 @@
   <header class="header">
     <div class="header-left">
       <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">☀️</button>
-      <button class="lock-btn" id="lockBtn" aria-label="Lock app">🔒</button>
+      <button class="hide-btn" id="hideBtn" aria-label="Hide app content" title="Hide">👁️</button>
       <h1>Habits</h1>
     </div>
     <span class="header-date" id="headerDate"></span>
@@ -594,26 +672,34 @@
 
   <div class="habits-list" id="habitsList"></div>
 
+  <div class="pinup-strip" id="pinupStrip" aria-label="Pin-up corner"></div>
+
   <div class="footer">
     <button class="btn btn-outline" id="exportBtn" aria-label="Export data">Export</button>
     <button class="btn btn-outline" id="importBtn" aria-label="Import data">Import</button>
+    <button class="btn btn-outline" id="settingsBtn" aria-label="Settings">Settings</button>
     <input type="file" id="importFile" accept=".json,application/json">
   </div>
 </div>
 
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-card">
-    <div class="icon">&#x1F512;</div>
-    <h2>Unlock</h2>
-    <p>Enter your password to access your habits.</p>
-    <form id="loginForm" autocomplete="off">
-      <input type="password" id="loginInput" placeholder="Password" autocomplete="current-password" aria-label="Password">
-      <div class="login-error" id="loginError">Wrong password</div>
-      <button type="submit" class="btn btn-primary">Unlock</button>
-    </form>
-    <div class="login-setup-msg" id="loginSetupMsg">
-      <strong>Setup needed:</strong> Open <code>generate-password.html</code>, choose a password, and paste the hash + salt into <code>index.html</code>. Then re-deploy.
+<div class="shield" id="privacyShield" aria-label="Hidden — tap to show">
+  <div class="shield-hint">
+    <span class="icon">👁️</span>
+    <span>Tap to show</span>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="dialog settings-dialog">
+    <h3>Settings</h3>
+    <div class="setting-row">
+      <div class="setting-label">Pin-up corner</div>
+      <label class="switch">
+        <input type="checkbox" id="pinupToggle" aria-label="Show pin-up corner">
+        <span class="slider"></span>
+      </label>
     </div>
+    <button class="btn btn-primary" id="settingsClose">Done</button>
   </div>
 </div>
 
@@ -635,11 +721,6 @@
    Habit Tracker — single-file PWA
    ───────────────────────────────────── */
 
-// ── Password config ──────────────────
-const PASSWORD_HASH = "f8188c8af9886651aebe91f47c948361804ddfc6d152ed1fffdfb50b8a1466be";
-const PASSWORD_SALT = "2071d60d3a3775d542d2b78852d75df7ee88fd428fa274ddb38689342e746359";
-const UNLOCK_KEY = 'habits_unlocked';
-
 // ── DOM refs ──
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -658,17 +739,25 @@ const exportBtn   = $('#exportBtn');
 const importBtn   = $('#importBtn');
 const importFile  = $('#importFile');
 const themeBtn    = $('#themeBtn');
-const loginOverlay = $('#loginOverlay');
-const loginForm   = $('#loginForm');
-const loginInput  = $('#loginInput');
-const loginError  = $('#loginError');
-const loginSetupMsg = $('#loginSetupMsg');
-const lockBtn     = $('#lockBtn');
+const hideBtn     = $('#hideBtn');
+const shield      = $('#privacyShield');
+const settingsBtn = $('#settingsBtn');
+const settingsOverlay = $('#settingsOverlay');
+const settingsClose = $('#settingsClose');
+const pinupToggle = $('#pinupToggle');
+const pinupStrip  = $('#pinupStrip');
 
 // ── State ──
 const STORAGE_KEY = 'habits_v1';
-let state = { version: 1, habits: [] };
+let state = { version: 1, habits: [], settings: {} };
 let confirmResolve = null;
+
+// Settings live inside the same JSON blob (still version 1 — older
+// backups without `settings` are fine, they get the defaults).
+function ensureSettings() {
+  if (!state.settings || typeof state.settings !== 'object') state.settings = {};
+  if (typeof state.settings.showPinup !== 'boolean') state.settings.showPinup = true;
+}
 
 // ── Helpers ──
 // YYYY-MM-DD in local time (per spec: never store timestamps)
@@ -717,6 +806,7 @@ function loadState() {
     const parsed = JSON.parse(raw);
     if (parsed && parsed.version === 1 && Array.isArray(parsed.habits)) {
       state = parsed;
+      ensureSettings();
     }
   } catch (e) { /* corrupt data — start fresh */ }
 }
@@ -758,8 +848,11 @@ function importData(file) {
         throw new Error('Invalid format');
       }
       state = data;
+      ensureSettings();
       saveState();
       render();
+      applyPinupVisibility();
+      syncSettingsUI();
       toast('Imported!');
     } catch (e) {
       toast('Invalid file.');
@@ -909,11 +1002,17 @@ function render() {
       </div>
       ${bodyHtml}
       <div class="card-actions">
-        <div class="view-toggle">
-          <button data-view-week="${h.id}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
-          <button data-view-month="${h.id}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
+        <div class="reorder-btns">
+          <button class="mini-btn" data-move-up="${h.id}" aria-label="Move up">▲</button>
+          <button class="mini-btn" data-move-down="${h.id}" aria-label="Move down">▼</button>
         </div>
-        <button class="btn btn-danger" data-delete="${h.id}">Delete</button>
+        <div class="card-actions-right">
+          <div class="view-toggle">
+            <button data-view-week="${h.id}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
+            <button data-view-month="${h.id}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
+          </div>
+          <button class="btn btn-danger" data-delete="${h.id}">Delete</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -954,110 +1053,94 @@ function render() {
   habitsList.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', () => deleteHabit(btn.dataset.delete));
   });
+  habitsList.querySelectorAll('[data-move-up]').forEach(btn => {
+    btn.addEventListener('click', () => moveHabit(btn.dataset.moveUp, -1));
+  });
+  habitsList.querySelectorAll('[data-move-down]').forEach(btn => {
+    btn.addEventListener('click', () => moveHabit(btn.dataset.moveDown, 1));
+  });
 }
 
 // ── Drag-and-drop reorder ──
-let dragState = null; // { habitId, startY, currentY, el, offsetY }
-
-function getCardCenter(el) {
-  const rect = el.getBoundingClientRect();
-  return rect.top + rect.height / 2;
-}
+// Live-swap drag: the card swaps places with its neighbours while the
+// pointer crosses their midlines. On release, the final order is read
+// straight from the DOM — no index math to get wrong.
+let dragState = null; // { el, pointerId }
 
 habitsList.addEventListener('pointerdown', e => {
+  if (dragState) return;
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
-  e.preventDefault();
-
   const card = handle.closest('.habit-card');
   if (!card) return;
 
-  card.setPointerCapture(e.pointerId);
-  dragState = {
-    habitId: handle.dataset.drag,
-    startY: e.clientY,
-    currentY: e.clientY,
-    el: card,
-    offsetY: e.clientY - card.getBoundingClientRect().top,
-  };
+  // WebKit throws for touch pointers in some versions — drag must not die on this.
+  try { card.setPointerCapture(e.pointerId); } catch (err) {}
+  dragState = { el: card, pointerId: e.pointerId };
   card.classList.add('dragging');
+  e.preventDefault();
 });
 
 habitsList.addEventListener('pointermove', e => {
-  if (!dragState) return;
+  if (!dragState || e.pointerId !== dragState.pointerId) return;
+  const el = dragState.el;
+  const y = e.clientY;
   e.preventDefault();
 
-  dragState.currentY = e.clientY;
-  const dy = e.clientY - dragState.startY;
-  dragState.el.style.transform = `translateY(${dy}px)`;
+  // Auto-scroll near the viewport edges so long lists can be reordered
+  if (y < 70 && window.scrollY > 0) {
+    window.scrollBy(0, -12);
+  } else if (y > window.innerHeight - 70) {
+    window.scrollBy(0, 12);
+  }
 
-  // Highlight the card we're hovering over
-  const cards = [...habitsList.querySelectorAll('.habit-card')];
-  const myCenter = dragState.el.getBoundingClientRect().top + dragState.el.offsetHeight / 2;
-
-  cards.forEach(c => {
-    c.classList.remove('drag-over');
-    if (c === dragState.el) return;
-    const cCenter = getCardCenter(c);
-    const dist = Math.abs(myCenter - cCenter);
-    if (dist < c.offsetHeight / 2) {
-      c.classList.add('drag-over');
-    }
-  });
+  const next = el.nextElementSibling;
+  if (next && next.classList.contains('habit-card')) {
+    const r = next.getBoundingClientRect();
+    // insert el after next (moves the dragged card down past it)
+    if (y > r.top + r.height / 2) { next.after(el); return; }
+  }
+  const prev = el.previousElementSibling;
+  if (prev && prev.classList.contains('habit-card')) {
+    const r = prev.getBoundingClientRect();
+    // insert el before prev (moves the dragged card up past it)
+    if (y < r.top + r.height / 2) { prev.before(el); }
+  }
 });
 
-habitsList.addEventListener('pointerup', e => {
+function endDrag() {
   if (!dragState) return;
-  const card = dragState.el;
-  card.classList.remove('dragging');
-  card.style.transform = '';
-
-  // Find drop position
-  const cards = [...habitsList.querySelectorAll('.habit-card')];
-  cards.forEach(c => c.classList.remove('drag-over'));
-
-  const draggedId = dragState.habitId;
-  const myCenter = card.getBoundingClientRect().top + card.offsetHeight / 2;
-
-  // Find the card whose center we passed (excluding the dragged card)
-  let insertAfterIdx = -1;
-  for (let i = 0; i < cards.length; i++) {
-    if (cards[i] === card) continue;
-    if (myCenter > getCardCenter(cards[i])) {
-      insertAfterIdx = i;
-    }
-  }
-
-  // Reorder the state array
-  const draggedIdx = state.habits.findIndex(h => h.id === draggedId);
-  if (draggedIdx === -1) { dragState = null; return; }
-
-  const [item] = state.habits.splice(draggedIdx, 1);
-
-  // Map DOM position back to array position (accounting for removed item)
-  let targetArrayIdx;
-  if (insertAfterIdx === -1) {
-    targetArrayIdx = 0; // insert at beginning
-  } else {
-    // The card at insertAfterIdx in DOM — find its array index
-    const afterId = cards[insertAfterIdx].id.replace('card-', '');
-    const afterIdx = state.habits.findIndex(h => h.id === afterId);
-    targetArrayIdx = afterIdx + 1;
-  }
-
-  state.habits.splice(targetArrayIdx, 0, item);
+  try { dragState.el.releasePointerCapture(dragState.pointerId); } catch (err) {}
+  dragState.el.classList.remove('dragging');
   dragState = null;
+
+  // Final order = current DOM order of the cards
+  const order = [...habitsList.querySelectorAll('.habit-card')].map(c => c.id.replace('card-', ''));
+  const byId = new Map(state.habits.map(h => [h.id, h]));
+  const reordered = order.map(id => byId.get(id)).filter(Boolean);
+  if (reordered.length === state.habits.length &&
+      reordered.some((h, i) => h !== state.habits[i])) {
+    state.habits = reordered;
+    saveState();
+    render();
+  }
+}
+
+habitsList.addEventListener('pointerup', endDrag);
+habitsList.addEventListener('pointercancel', endDrag);
+window.addEventListener('pointerup', endDrag);
+window.addEventListener('pointercancel', endDrag);
+
+// ▲▼ buttons — guaranteed fallback if drag is ever unavailable
+function moveHabit(habitId, dir) {
+  const i = state.habits.findIndex(h => h.id === habitId);
+  const j = i + dir;
+  if (i === -1 || j < 0 || j >= state.habits.length) return;
+  const [item] = state.habits.splice(i, 1);
+  state.habits.splice(j, 0, item);
   saveState();
   render();
-});
-
-habitsList.addEventListener('pointercancel', () => {
-  if (!dragState) return;
-  dragState.el.classList.remove('dragging');
-  dragState.el.style.transform = '';
-  habitsList.querySelectorAll('.habit-card').forEach(c => c.classList.remove('drag-over'));
-  dragState = null;
-});
+}
 
 // ── Actions ──
 function addHabit(name) {
@@ -1126,72 +1209,18 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Password gate ──
-function isConfigured() {
-  return PASSWORD_HASH !== 'PLACEHOLDER' && PASSWORD_SALT !== 'PLACEHOLDER';
+// ── Privacy shield (hide button) ──
+// Hides the whole page behind a plain cover. Tap anywhere to show it again.
+function hideApp() {
+  shield.classList.add('show');
 }
 
-function isUnlocked() {
-  return sessionStorage.getItem(UNLOCK_KEY) === '1';
+function showApp() {
+  shield.classList.remove('show');
 }
 
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + PASSWORD_SALT);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function tryUnlock(password) {
-  if (!isConfigured()) return false;
-  const hash = await hashPassword(password);
-  return hash === PASSWORD_HASH;
-}
-
-function showLogin() {
-  loginOverlay.classList.remove('hidden');
-  loginInput.value = '';
-  loginError.classList.remove('show', 'shake');
-  // Show setup message if hash not configured
-  if (isConfigured()) {
-    loginSetupMsg.classList.remove('show');
-    loginForm.style.display = '';
-  } else {
-    loginSetupMsg.classList.add('show');
-    loginForm.style.display = 'none';
-  }
-}
-
-function hideLogin() {
-  loginOverlay.classList.add('hidden');
-}
-
-function lockApp() {
-  sessionStorage.removeItem(UNLOCK_KEY);
-  showLogin();
-}
-
-loginForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const pw = loginInput.value;
-  if (!pw) return;
-
-  const ok = await tryUnlock(pw);
-  if (ok) {
-    sessionStorage.setItem(UNLOCK_KEY, '1');
-    hideLogin();
-    render();
-  } else {
-    loginError.classList.remove('shake');
-    void loginError.offsetWidth; // reflow to restart animation
-    loginError.classList.add('show', 'shake');
-    loginInput.value = '';
-    loginInput.focus();
-  }
-});
-
-lockBtn.addEventListener('click', lockApp);
+hideBtn.addEventListener('click', hideApp);
+shield.addEventListener('click', showApp);
 
 // ── Theme ──
 const THEME_KEY = 'theme';
@@ -1233,19 +1262,128 @@ if (window.matchMedia) {
   });
 }
 
+// ── Settings dialog ──
+function syncSettingsUI() {
+  pinupToggle.checked = state.settings.showPinup;
+}
+
+settingsBtn.addEventListener('click', () => {
+  syncSettingsUI();
+  settingsOverlay.classList.add('open');
+});
+
+settingsClose.addEventListener('click', () => settingsOverlay.classList.remove('open'));
+settingsOverlay.addEventListener('click', e => {
+  if (e.target === settingsOverlay) settingsOverlay.classList.remove('open');
+});
+
+pinupToggle.addEventListener('change', () => {
+  state.settings.showPinup = pinupToggle.checked;
+  saveState();
+  applyPinupVisibility();
+});
+
+// ── Pin-up corner ──
+// Hand-drawn vintage silhouettes — no external assets, works offline.
+// Tap a slot to cycle through the poses. Drop your own images into a
+// `pinups/` folder next to index.html (pinup-1.png/jpg/webp, …) and
+// they replace the built-in drawings automatically.
+const PINUPS = [
+`<svg viewBox="0 0 120 120" role="img" aria-label="Pin-up, standing with raised arm">
+  <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" opacity=".35"/>
+  <ellipse cx="60" cy="34" rx="21" ry="18"/>
+  <circle cx="60" cy="40" r="10"/>
+  <path d="M60 15 Q53 9 47 11 Q53 17 60 15 Z"/>
+  <path d="M60 15 Q67 9 73 11 Q67 17 60 15 Z"/>
+  <circle cx="60" cy="15" r="2.4"/>
+  <rect x="57" y="48" width="6" height="7" rx="2"/>
+  <path d="M48 55 Q60 48 72 55 Q73 61 71 65 L49 65 Q47 61 48 55 Z"/>
+  <rect x="54" y="63" width="12" height="9" rx="4"/>
+  <path d="M52 71 Q60 66 68 71 Q69 83 60 85 Q51 83 52 71 Z"/>
+  <path d="M55 83 L55 102" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M64 83 C67 90 66 95 61 100" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M52 102 Q58 100.5 60.5 103 L59.5 106.5 L51.5 105.5 Z"/>
+  <path d="M58 100 Q63 99.5 64.5 102 L63.5 105.5 L57.5 104.5 Z"/>
+  <path d="M48.5 56 C40 51 38 41 44 34 C46.5 30.5 50 29.5 53 31" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+  <path d="M71.5 56 C78 61 76 68 69.5 73" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+</svg>`,
+`<svg viewBox="0 0 120 120" role="img" aria-label="Pin-up, seated with crossed legs">
+  <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" opacity=".35"/>
+  <ellipse cx="60" cy="36" rx="21" ry="18"/>
+  <circle cx="60" cy="42" r="10"/>
+  <path d="M42 30 Q60 21 78 30" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <circle cx="77" cy="29" r="4"/>
+  <rect x="57" y="50" width="6" height="7" rx="2"/>
+  <path d="M48 57 Q60 50 72 57 Q73 63 71 67 L49 67 Q47 63 48 57 Z"/>
+  <rect x="54" y="65" width="12" height="9" rx="4"/>
+  <path d="M52 73 Q60 69 68 73 L75 100 Q60 112 45 100 Z"/>
+  <path d="M54 99 C58 103 63 103 67 100" stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M66 97 C70 100 72 104 71 108" stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M68 107 Q74 106 75.5 108.5 L74 112 L67 111 Z"/>
+  <path d="M48.5 58 C41 53 40 43 45 36 C47.5 33 50 32 52.5 34" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+  <path d="M71.5 58 C77 63 75 70 68 76" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+</svg>`,
+`<svg viewBox="0 0 120 120" role="img" aria-label="Pin-up, hands on hips">
+  <circle cx="60" cy="60" r="55" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 4" opacity=".35"/>
+  <ellipse cx="60" cy="34" rx="21" ry="18"/>
+  <circle cx="60" cy="40" r="10"/>
+  <path d="M60 15 Q53 9 47 11 Q53 17 60 15 Z"/>
+  <path d="M60 15 Q67 9 73 11 Q67 17 60 15 Z"/>
+  <circle cx="60" cy="15" r="2.4"/>
+  <rect x="57" y="48" width="6" height="7" rx="2"/>
+  <path d="M48 55 Q60 48 72 55 Q73 61 71 65 L49 65 Q47 61 48 55 Z"/>
+  <rect x="54" y="63" width="12" height="9" rx="4"/>
+  <path d="M52 71 Q60 66 68 71 Q69 83 60 85 Q51 83 52 71 Z"/>
+  <path d="M55 83 L55 102" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M64 83 L60 102" stroke="currentColor" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <path d="M51 102 Q60 101.5 66 103.5 L65 107 L50 106 Z"/>
+  <path d="M48.5 56 C42 61 43 68 48.5 73" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+  <path d="M71.5 56 C78 61 77 68 71.5 73" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+</svg>`
+];
+
+function buildPinupStrip() {
+  pinupStrip.innerHTML = PINUPS.map((svg, i) =>
+    `<button class="pinup-slot" data-slot="${i}" data-pose="${i}" aria-label="Pin-up ${i + 1}">${svg}</button>`
+  ).join('');
+  for (let i = 0; i < PINUPS.length; i++) tryLoadCustomPinup(i, ['png', 'jpg', 'webp'], 0);
+}
+
+function tryLoadCustomPinup(slot, exts, idx) {
+  if (idx >= exts.length) return;
+  const img = new Image();
+  img.alt = `Pin-up ${slot + 1}`;
+  img.className = 'pinup-img';
+  img.onload = () => {
+    const el = pinupStrip.querySelector(`[data-slot="${slot}"]`);
+    if (el) { el.dataset.custom = '1'; el.replaceChildren(img); }
+  };
+  img.onerror = () => tryLoadCustomPinup(slot, exts, idx + 1);
+  img.src = `./pinups/pinup-${slot + 1}.${exts[idx]}`;
+}
+
+pinupStrip.addEventListener('click', e => {
+  const slot = e.target.closest('.pinup-slot');
+  if (!slot || slot.dataset.custom) return;
+  const pose = (Number(slot.dataset.pose) + 1) % PINUPS.length;
+  slot.dataset.pose = pose;
+  slot.innerHTML = PINUPS[pose];
+});
+
+function applyPinupVisibility() {
+  pinupStrip.classList.toggle('hidden', !state.settings.showPinup);
+}
+
 // ── Init ──
 function init() {
   loadState();
+  ensureSettings(); // also covers first launch (no stored state yet)
   applyTheme(getTheme());
   persistStorage();
 
-  if (!isUnlocked()) {
-    showLogin();
-    return;
-  }
-
-  hideLogin();
   render();
+  buildPinupStrip();
+  applyPinupVisibility();
 
   // Register service worker
   if ('serviceWorker' in navigator) {

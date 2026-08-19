@@ -1,7 +1,7 @@
 // Service Worker — Habit Tracker
 // Versioned cache; cleans up old caches on activate.
 
-const CACHE_NAME = 'habits-v2';
+const CACHE_NAME = 'habits-v3';
 const SHELL = [
   './',
   './index.html',
