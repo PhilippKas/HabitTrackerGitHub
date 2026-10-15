@@ -17,6 +17,7 @@ All user data stays on-device — there is no backend and nothing is sent to a s
 /
 ├── index.html      # markup + app logic
 ├── game.js         # gamification rules (pure functions, exposes one `Game` global)
+├── avatar.js       # evolving runner + pet SVGs (pure, exposes one `Avatar` global)
 ├── manifest.json   # app name, icons, "display": "standalone"
 ├── sw.js           # service worker: caches the app shell for offline use
 ├── icon.svg        # icon source (PNGs are rendered from it)
@@ -77,12 +78,14 @@ Keep it flat and JSON-serializable so the whole state round-trips through one
  
 - Optional, additive fields (no version bump needed; older versions ignore them):
   `habit.stat` (`"BODY" | "INT" | "TECH" | "COOL" | "EMP"`), `settings.gamify`
-  (false = game UI off), `settings.handle` (runner name), `settings.lastExport`.
+  (false = game UI off), `settings.handle` (runner name), `settings.lastExport`,
+  `settings.avatar` (`{ skin, hair, neon, petName }`, cosmetic only).
 - Store completions as a list of `YYYY-MM-DD` strings — makes streak math trivial.
 - **Game state is derived, never stored.** XP, levels, attributes, crits and badges
   are recomputed from `completed` by `Game.computeProgress` (game.js). Don't persist
-  any of it. The app must keep working if `game.js` fails to load (`window.Game`
-  missing → game UI hidden).
+  any of it. The avatar's evolution is derived from the level the same way.
+  The app must keep working if `game.js` / `avatar.js` fail to load
+  (`window.Game` missing → game UI hidden; `window.Avatar` missing → class icon).
 - The `version` field is required: check it on load and migrate old data instead
   of breaking it.
 ## PWA requirements
