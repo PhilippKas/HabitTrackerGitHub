@@ -48,6 +48,11 @@ Data loss is the worst-case failure for this app. Design defensively.
 - **Always ship Export / Import.** Provide a button to download the full state as
   a `.json` file, and one to re-import it. This is the real backup and is
   non-negotiable. On-device storage is the working copy, not the only copy.
+- **Loading never writes.** `loadState` only fills missing defaults in memory.
+  Safety copies live next to the main `habits_v1` key and must never be
+  overwritten automatically: `habits_v1_backup_pre_v2` (first-launch snapshot),
+  `habits_v1_preimport` (for "Undo last import"), `habits_v1_unreadable_*`
+  (data that failed to parse).
 ## Data model
  
 Keep it flat and JSON-serializable so the whole state round-trips through one

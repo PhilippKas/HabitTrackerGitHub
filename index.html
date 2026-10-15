@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Habit Tracker">
 <title>Habit Tracker</title>
 <link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -64,6 +65,7 @@
   [data-theme="dark"] .view-toggle button { background: var(--color-surface); }
   [data-theme="dark"] .btn-outline { background: var(--color-surface); }
 
+  [hidden] { display: none !important; }
   html { height: 100%; }
   body {
     font-family: var(--font);
@@ -215,9 +217,6 @@
     border: 1px solid var(--color-border);
     transition: border-color .2s;
   }
-  .habit-card.swiped {
-    border-color: var(--color-danger);
-  }
   .habit-card.dragging {
     opacity: 0.92;
     box-shadow: 0 8px 25px rgba(0,0,0,.15);
@@ -306,20 +305,6 @@
     color: #fff;
   }
   .day-dot.today { border-color: var(--color-primary); border-width: 2.5px; }
-  .day-labels {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-start;
-  }
-  .day-label {
-    width: 40px;
-    text-align: center;
-    font-size: 10px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
 
   /* ── Month Nav ── */
   .month-nav {
@@ -612,21 +597,10 @@
     margin-top: 3px;
     max-width: 180px;
   }
-  .settings-dialog input[type="time"] {
-    padding: 10px 12px;
-    font-size: 15px;
-    font-family: var(--font);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface);
-    color: var(--color-text);
-    outline: none;
-    flex-shrink: 0;
-    min-height: 44px;
-    max-width: 120px;
-  }
-  [data-theme="dark"] input[type="time"] { color-scheme: dark; }
   .settings-dialog > .btn { width: 100%; margin-top: 12px; }
+  .setting-value { font-size: 13px; color: var(--color-text-secondary); text-align: right; }
+  .setting-value.warn { color: var(--color-danger); font-weight: 600; }
+  .settings-dialog > .btn.btn-outline { font-size: 14px; }
 
   /* ── Toggle switch ── */
   .switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
@@ -690,8 +664,8 @@
 </div>
 
 <div class="overlay" id="settingsOverlay">
-  <div class="dialog settings-dialog">
-    <h3>Settings</h3>
+  <div class="dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <h3 id="settingsTitle">Settings</h3>
     <div class="setting-row">
       <div class="setting-label">Pin-up corner</div>
       <label class="switch">
@@ -699,6 +673,17 @@
         <span class="slider"></span>
       </label>
     </div>
+    <div class="setting-row">
+      <div class="setting-label">Last backup
+        <small>Export regularly — the file is your real backup.</small>
+      </div>
+      <span class="setting-value" id="lastExportInfo"></span>
+    </div>
+    <div class="setting-row">
+      <div class="setting-label">Storage</div>
+      <span class="setting-value" id="persistInfo"></span>
+    </div>
+    <button class="btn btn-outline" id="undoImportBtn" hidden>Undo last import</button>
     <button class="btn btn-primary" id="settingsClose">Done</button>
   </div>
 </div>
@@ -706,7 +691,7 @@
 <div class="toast" id="toast"></div>
 
 <div class="overlay" id="confirmOverlay">
-  <div class="dialog">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <h3 id="confirmTitle">Delete habit?</h3>
     <p id="confirmMsg">This cannot be undone.</p>
     <div class="btn-row">
@@ -723,7 +708,6 @@
 
 // ── DOM refs ──
 const $ = (s) => document.querySelector(s);
-const $$ = (s) => document.querySelectorAll(s);
 
 const habitsList  = $('#habitsList');
 const addForm     = $('#addForm');
@@ -746,9 +730,17 @@ const settingsOverlay = $('#settingsOverlay');
 const settingsClose = $('#settingsClose');
 const pinupToggle = $('#pinupToggle');
 const pinupStrip  = $('#pinupStrip');
+const lastExportInfo = $('#lastExportInfo');
+const persistInfo = $('#persistInfo');
+const undoImportBtn = $('#undoImportBtn');
 
 // ── State ──
 const STORAGE_KEY = 'habits_v1';
+// Safety copies — written next to the main key, never read automatically.
+const SNAPSHOT_KEY  = 'habits_v1_backup_pre_v2';  // raw data as found on first launch of this version
+const PREIMPORT_KEY = 'habits_v1_preimport';      // state right before the last import
+const UNREADABLE_KEY = 'habits_v1_unreadable';    // raw data we could not parse (suffixed by date)
+const BACKUP_NUDGE_DAYS = 14;
 let state = { version: 1, habits: [], settings: {} };
 let confirmResolve = null;
 
@@ -772,16 +764,31 @@ function dateAdd(dateStr, days) {
   return fmtDate(d);
 }
 
+function daysBetween(a, b) {
+  return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+}
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Escape anything from state before it goes into innerHTML.
+function esc(v) {
+  return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function newId() {
+  // crypto.randomUUID() is supported in all modern browsers
+  const id = crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10);
+  return 'h_' + id;
+}
+
 function dayName(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2).toUpperCase();
 }
 
-function idShort(id) { return id.slice(0, 5); }
-
 // ── Streak ──
-// Count consecutive completed days ending today (or yesterday if today not done).
-// Actually, per spec: "consecutive days up to today". Count backwards from today.
+// Consecutive completed days counting back from today. Today not being done
+// yet doesn't break the streak — yesterday counts as the starting point.
 function calcStreak(completed) {
   const set = new Set(completed);
   let t = today();
@@ -799,16 +806,52 @@ function calcStreak(completed) {
 }
 
 // ── Persistence ──
+// Loading is strictly non-destructive: nothing is written back here, and
+// missing fields are only filled in memory (they get saved with the next
+// real change). Data we can't read is copied aside before the app starts empty.
 function loadState() {
+  let raw;
+  try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return; }
+  if (!raw) return;
+
+  // One-time copy of the data exactly as this app version first found it.
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (parsed && parsed.version === 1 && Array.isArray(parsed.habits)) {
-      state = parsed;
-      ensureSettings();
+    if (localStorage.getItem(SNAPSHOT_KEY) === null) localStorage.setItem(SNAPSHOT_KEY, raw);
+  } catch (e) { /* storage full — not fatal, the main key is untouched */ }
+
+  let parsed = null;
+  try { parsed = JSON.parse(raw); } catch (e) { /* handled below */ }
+  const migrated = migrate(parsed);
+  if (migrated) {
+    state = migrated;
+    ensureSettings();
+    state.habits.forEach(h => { if (!Array.isArray(h.completed)) h.completed = []; });
+    return;
+  }
+
+  // Unreadable or from a newer app version: keep a copy so the next save
+  // can't destroy it, then start empty.
+  stashUnreadable(raw);
+  setTimeout(() => toast('Saved data could not be read — a copy was kept. Import a backup.'), 300);
+}
+
+// Bring older data shapes up to the current version. Returns null for
+// anything this version doesn't understand (including newer versions).
+function migrate(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.habits)) return null;
+  if (data.version === 1) return data;
+  return null;
+}
+
+function stashUnreadable(raw) {
+  try {
+    for (let n = 1; n < 100; n++) {
+      const key = `${UNREADABLE_KEY}_${today()}${n > 1 ? '_' + n : ''}`;
+      const existing = localStorage.getItem(key);
+      if (existing === raw) return;
+      if (existing === null) { localStorage.setItem(key, raw); return; }
     }
-  } catch (e) { /* corrupt data — start fresh */ }
+  } catch (e) { /* nothing more we can do */ }
 }
 
 function saveState() {
@@ -823,49 +866,127 @@ function persistStorage() {
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().then(granted => {
       if (!granted) console.warn('Storage persist denied — export your data regularly.');
-    });
+    }).catch(() => {});
   }
 }
 
 // ── Export / Import ──
-function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+async function exportData() {
+  const file = new File([JSON.stringify(state, null, 2)], `habits-backup-${today()}.json`, { type: 'application/json' });
+
+  // On the phone the share sheet ("Save to Files", AirDrop, …) is far more
+  // reliable than a download link, especially in a Home Screen app.
+  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      markExported();
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user closed the share sheet
+      // anything else — fall through to the download link
+    }
+  }
+
+  const url = URL.createObjectURL(file);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `habits-backup-${today()}.json`;
+  a.download = file.name;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  // Revoking right away can cancel the download in WebKit.
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  markExported();
+}
+
+function markExported() {
+  state.settings.lastExport = today();
+  saveState();
   toast('Exported!');
 }
 
-function importData(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (!data || data.version !== 1 || !Array.isArray(data.habits)) {
-        throw new Error('Invalid format');
-      }
-      state = data;
-      ensureSettings();
-      saveState();
-      render();
-      applyPinupVisibility();
-      syncSettingsUI();
-      toast('Imported!');
-    } catch (e) {
-      toast('Invalid file.');
-    }
-  };
-  reader.readAsText(file);
+// Strict cleanup for imported files only (never applied on load): keeps
+// valid habits, dedupes/sorts dates, and preserves any unknown fields.
+function normalizeImport(data) {
+  const migrated = migrate(data);
+  if (!migrated) return null;
+  const seen = new Set();
+  const habits = [];
+  for (const h of migrated.habits) {
+    if (!h || typeof h !== 'object' || typeof h.name !== 'string' || !h.name.trim()) continue;
+    let id = typeof h.id === 'string' && h.id ? h.id : newId();
+    while (seen.has(id)) id = newId();
+    seen.add(id);
+    const completed = Array.isArray(h.completed)
+      ? [...new Set(h.completed.filter(d => typeof d === 'string' && DATE_RE.test(d)))].sort()
+      : [];
+    const createdAt = typeof h.createdAt === 'string' && DATE_RE.test(h.createdAt) ? h.createdAt : today();
+    habits.push({ ...h, id, createdAt, completed });
+  }
+  return { ...migrated, habits };
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
+async function importData(file) {
+  let data;
+  try {
+    data = normalizeImport(JSON.parse(await readFile(file)));
+  } catch (e) { data = null; }
+  if (!data) { toast('Invalid file.'); return; }
+
+  const cur = state.habits.length, inc = data.habits.length;
+  const ok = await confirm('Import backup?',
+    `This replaces your ${cur} habit${cur === 1 ? '' : 's'} with ${inc} from the file. ` +
+    'You can undo this in Settings.', 'Import');
+  if (!ok) return;
+
+  try {
+    localStorage.setItem(PREIMPORT_KEY, JSON.stringify(state));
+  } catch (e) {
+    toast('Could not save a safety copy — import cancelled.');
+    return;
+  }
+  applyImportedState(data);
+  toast('Imported!');
+}
+
+function applyImportedState(data) {
+  state = data;
+  ensureSettings();
+  saveState();
+  render();
+  applyPinupVisibility();
+  syncSettingsUI();
+}
+
+async function undoImport() {
+  let prev = null;
+  try { prev = migrate(JSON.parse(localStorage.getItem(PREIMPORT_KEY))); } catch (e) {}
+  if (!prev) { toast('Nothing to undo.'); return; }
+  const ok = await confirm('Undo last import?',
+    `This restores the ${prev.habits.length} habit${prev.habits.length === 1 ? '' : 's'} you had before importing.`, 'Restore');
+  if (!ok) return;
+  applyImportedState(prev);
+  try { localStorage.removeItem(PREIMPORT_KEY); } catch (e) {}
+  syncSettingsUI();
+  toast('Restored.');
 }
 
 // ── Confirm dialog ──
-function confirm(title, msg) {
+function confirm(title, msg, okLabel = 'Delete') {
   return new Promise(resolve => {
     confirmTitle.textContent = title;
     confirmMsg.textContent = msg;
+    confirmOk.textContent = okLabel;
     confirmResolve = resolve;
     overlay.classList.add('open');
   });
@@ -902,8 +1023,9 @@ function getMonthOffset(habitId) {
 
 // ── Calendar helpers ──
 function monthYearLabel(offset) {
-  const d = new Date();
-  d.setMonth(d.getMonth() + offset);
+  // Day 1 of the target month — setMonth() on today's date overflows on the 29th–31st.
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
   return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
 
@@ -946,6 +1068,7 @@ function render() {
   }
 
   habitsList.innerHTML = state.habits.map(h => {
+    const hid = esc(h.id);
     const completedSet = new Set(h.completed);
     const streak = calcStreak(h.completed);
     const isToday = today();
@@ -960,15 +1083,15 @@ function render() {
         const done = completedSet.has(c.date);
         const isT = c.date === isToday;
         return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}"
-          data-habit="${h.id}" data-date="${c.date}"
+          data-habit="${hid}" data-date="${c.date}"
           aria-label="${c.date}${done ? ' done' : ''}">${c.dayNum}</button>`;
       }).join('');
 
       bodyHtml = `
         <div class="month-nav">
-          <button class="month-nav-btn" data-month-prev="${h.id}" aria-label="Previous month">&#8249;</button>
+          <button class="month-nav-btn" data-month-prev="${hid}" aria-label="Previous month">&#8249;</button>
           <span class="month-nav-label">${monthYearLabel(offset)}</span>
-          <button class="month-nav-btn" data-month-next="${h.id}" aria-label="Next month">&#8250;</button>
+          <button class="month-nav-btn" data-month-next="${hid}" aria-label="Next month">&#8250;</button>
         </div>
         <div class="calendar">
           <div class="calendar-grid">${calCellsHtml}</div>
@@ -985,17 +1108,17 @@ function render() {
         const done = completedSet.has(d);
         const isT = d === isToday;
         return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}"
-          data-habit="${h.id}" data-date="${d}"
+          data-habit="${hid}" data-date="${d}"
           aria-label="${d} ${done ? 'done' : 'not done'}${isT ? ' (today)' : ''}"
           title="${d}">${dayName(d)}</button>`;
       }).join('');
       bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
     }
 
-    return `<div class="habit-card" id="card-${h.id}">
+    return `<div class="habit-card" id="card-${hid}">
       <div class="habit-row">
-        <span class="drag-handle" data-drag="${h.id}" aria-label="Drag to reorder">⋮⋮</span>
-        <span class="habit-name" title="${h.name}">${h.name}</span>
+        <span class="drag-handle" data-drag="${hid}" aria-label="Drag to reorder">⋮⋮</span>
+        <span class="habit-name" title="${esc(h.name)}">${esc(h.name)}</span>
         <span class="habit-streak${streak === 0 ? ' zero' : ''}">
           &#x1F525; ${streak}
         </span>
@@ -1003,15 +1126,15 @@ function render() {
       ${bodyHtml}
       <div class="card-actions">
         <div class="reorder-btns">
-          <button class="mini-btn" data-move-up="${h.id}" aria-label="Move up">▲</button>
-          <button class="mini-btn" data-move-down="${h.id}" aria-label="Move down">▼</button>
+          <button class="mini-btn" data-move-up="${hid}" aria-label="Move up">▲</button>
+          <button class="mini-btn" data-move-down="${hid}" aria-label="Move down">▼</button>
         </div>
         <div class="card-actions-right">
           <div class="view-toggle">
-            <button data-view-week="${h.id}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
-            <button data-view-month="${h.id}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
+            <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
+            <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
           </div>
-          <button class="btn btn-danger" data-delete="${h.id}">Delete</button>
+          <button class="btn btn-danger" data-delete="${hid}">Delete</button>
         </div>
       </div>
     </div>`;
@@ -1146,10 +1269,8 @@ function moveHabit(habitId, dir) {
 function addHabit(name) {
   name = name.trim();
   if (!name) return;
-  // crypto.randomUUID() is supported in all modern browsers
-  const id = crypto.randomUUID ? crypto.randomUUID().slice(0, 8) : Math.random().toString(36).slice(2, 10);
   state.habits.push({
-    id: 'h_' + id,
+    id: newId(),
     name,
     createdAt: today(),
     completed: []
@@ -1199,6 +1320,13 @@ importFile.addEventListener('change', () => {
     importData(importFile.files[0]);
     importFile.value = '';
   }
+});
+
+// ── Escape closes dialogs ──
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (overlay.classList.contains('open')) closeConfirm(false);
+  else if (settingsOverlay.classList.contains('open')) settingsOverlay.classList.remove('open');
 });
 
 // ── Keyboard shortcut for add ──
@@ -1265,6 +1393,27 @@ if (window.matchMedia) {
 // ── Settings dialog ──
 function syncSettingsUI() {
   pinupToggle.checked = state.settings.showPinup;
+
+  const last = state.settings.lastExport;
+  const age = last ? daysBetween(last, today()) : null;
+  lastExportInfo.textContent = last == null ? 'Never'
+    : age <= 0 ? 'Today'
+    : age === 1 ? 'Yesterday'
+    : `${age} days ago`;
+  lastExportInfo.classList.toggle('warn', last == null || age >= BACKUP_NUDGE_DAYS);
+
+  persistInfo.textContent = '…';
+  if (navigator.storage && navigator.storage.persisted) {
+    navigator.storage.persisted()
+      .then(p => { persistInfo.textContent = p ? 'Protected' : 'Not protected'; })
+      .catch(() => { persistInfo.textContent = 'Unknown'; });
+  } else {
+    persistInfo.textContent = 'Unknown';
+  }
+
+  let hasPreimport = false;
+  try { hasPreimport = localStorage.getItem(PREIMPORT_KEY) !== null; } catch (e) {}
+  undoImportBtn.hidden = !hasPreimport;
 }
 
 settingsBtn.addEventListener('click', () => {
@@ -1273,6 +1422,10 @@ settingsBtn.addEventListener('click', () => {
 });
 
 settingsClose.addEventListener('click', () => settingsOverlay.classList.remove('open'));
+undoImportBtn.addEventListener('click', () => {
+  settingsOverlay.classList.remove('open');
+  undoImport();
+});
 settingsOverlay.addEventListener('click', e => {
   if (e.target === settingsOverlay) settingsOverlay.classList.remove('open');
 });
@@ -1549,7 +1702,7 @@ function buildPinupStrip() {
   pinupStrip.innerHTML = PINUPS.map((svg, i) =>
     `<button class="pinup-slot" data-slot="${i}" data-pose="${i}" aria-label="Pin-up ${i + 1}">${svg}</button>`
   ).join('');
-  for (let i = 0; i < PINUPS.length; i++) tryLoadCustomPinup(i, ['png', 'jpg', 'webp'], 0);
+  for (let i = 0; i < PINUPS.length; i++) tryLoadCustomPinup(i, ['jpg', 'png', 'webp'], 0);
 }
 
 function tryLoadCustomPinup(slot, exts, idx) {
@@ -1587,12 +1740,41 @@ function init() {
   render();
   buildPinupStrip();
   applyPinupVisibility();
+  nudgeBackup();
 
-  // Register service worker
+  // Register service worker, then ask it to refresh the cached app files
+  // (resilience: re-cache critical assets on every launch).
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.ready
+      .then(reg => { if (reg.active) reg.active.postMessage('recache'); })
+      .catch(() => {});
   }
 }
+
+// Gentle reminder, at most once a day, when the last export is old.
+function nudgeBackup() {
+  if (state.habits.length === 0) return;
+  const last = state.settings.lastExport;
+  if (last && daysBetween(last, today()) < BACKUP_NUDGE_DAYS) return;
+  try {
+    if (localStorage.getItem('backup_nudge_day') === today()) return;
+    localStorage.setItem('backup_nudge_day', today());
+  } catch (e) { return; }
+  setTimeout(() => toast(last ? `Last backup ${daysBetween(last, today())} days ago — tap Export` : 'Tip: tap Export to back up your data'), 1200);
+}
+
+// A Home Screen app resumes without reloading — refresh "today" when it
+// comes back (e.g. after midnight) and renew the storage request.
+let renderedDay = today();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  persistStorage();
+  if (today() !== renderedDay && !dragState) {
+    renderedDay = today();
+    render();
+  }
+});
 
 init();
 </script>
