@@ -14,502 +14,633 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --color-bg: #f8f7fc;
-    --color-surface: #ffffff;
-    --color-primary: #4f46e5;
-    --color-primary-hover: #4338ca;
-    --color-text: #1e1b4b;
-    --color-text-secondary: #6b7280;
-    --color-border: #e5e7eb;
-    --color-success: #10b981;
-    --color-danger: #ef4444;
-    --color-danger-bg: #fef2f2;
-    --color-streak-bg: #eef2ff;
-    --color-streak-zero-bg: #f3f4f6;
-    --color-nav-active-bg: #f3f4f6;
-    --color-overlay: rgba(0,0,0,.35);
-    --color-toast-bg: #1e1b4b;
-    --color-toast-text: #fff;
-    --pinup-bg: #ffe9ec;
-    --pinup-fig: #1e1b4b;
+    color-scheme: light;
+    --bg: #f2f2f7;
+    --surface: #ffffff;
+    --surface-2: #f0f0f5;          /* tonal fills inside cards */
+    --text: #1c1c1e;
+    --text-2: #6c6c72;
+    --text-3: #a1a1a8;
+    --separator: rgba(60,60,67,.12);
+    --accent: #5e5ce6;
+    --accent-soft: rgba(94,92,230,.12);
+    --on-accent: #ffffff;
+    --flame: #f28c00;
+    --danger: #ff3b30;
+    --danger-soft: rgba(255,59,48,.1);
+    --seg-active: #ffffff;
+    --overlay: rgba(0,0,0,.28);
+    --toast-bg: rgba(28,28,30,.9);
+    --toast-text: #ffffff;
+    --pinup-bg: #fbe9ec;
+    --pinup-fig: #1c1c1e;
+    --radius-lg: 22px;
     --radius: 14px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius-sm: 10px;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,.18);
+    --ease: cubic-bezier(.2,.8,.2,1);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   /* ── Dark Mode ── */
   [data-theme="dark"] {
-    --color-bg: #0f0f1a;
-    --color-surface: #1a1a2e;
-    --color-primary: #818cf8;
-    --color-primary-hover: #6366f1;
-    --color-text: #e2e8f0;
-    --color-text-secondary: #94a3b8;
-    --color-border: #2d2d4a;
-    --color-success: #34d399;
-    --color-danger: #f87171;
-    --color-danger-bg: #2d1f1f;
-    --color-streak-bg: #1e1b4b;
-    --color-streak-zero-bg: #2a2a3e;
-    --color-nav-active-bg: #2a2a3e;
-    --color-overlay: rgba(0,0,0,.6);
-    --color-toast-bg: #e2e8f0;
-    --color-toast-text: #1e1b4b;
-    --pinup-bg: #2a2a3e;
-    --pinup-fig: #e2e8f0;
-    --shadow: 0 1px 3px rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.15);
+    color-scheme: dark;
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --text: #f5f5f7;
+    --text-2: #98989f;
+    --text-3: #636366;
+    --separator: rgba(84,84,88,.5);
+    --accent: #7d7aff;
+    --accent-soft: rgba(125,122,255,.2);
+    --flame: #ff9f0a;
+    --danger: #ff453a;
+    --danger-soft: rgba(255,69,58,.16);
+    --seg-active: #636366;
+    --overlay: rgba(0,0,0,.6);
+    --toast-bg: rgba(242,242,247,.94);
+    --toast-text: #1c1c1e;
+    --pinup-bg: #2c2c2e;
+    --pinup-fig: #f5f5f7;
+    --shadow: none;
+    --shadow-lg: 0 16px 40px rgba(0,0,0,.6);
   }
-  [data-theme="dark"] input::placeholder { color: #6b7280; }
-  [data-theme="dark"] .month-nav-btn { background: var(--color-surface); }
-  [data-theme="dark"] .view-toggle button { background: var(--color-surface); }
-  [data-theme="dark"] .btn-outline { background: var(--color-surface); }
 
   [hidden] { display: none !important; }
-  html { height: 100%; }
+  html { height: 100%; background: var(--bg); }
   body {
     font-family: var(--font);
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: var(--bg);
+    color: var(--text);
     min-height: 100%;
     min-height: 100dvh;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     -webkit-font-smoothing: antialiased;
     -webkit-user-select: none;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    font-variant-numeric: tabular-nums;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+
+  /* Line icons */
+  .i {
+    width: 20px; height: 20px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .i.solid { fill: currentColor; stroke: none; }
 
   .app {
     width: 100%;
     max-width: 480px;
-    padding: 20px 16px 40px;
+    padding: 8px 16px 48px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
   }
 
   /* ── Header ── */
   .header {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    padding: 8px 4px 0;
-    gap: 8px;
-  }
-  .header-left { display: flex; align-items: center; gap: 8px; }
-  .header h1 {
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    color: var(--color-text);
+    gap: 12px;
+    padding: 18px 4px 0;
   }
   .header-date {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-2);
   }
-  .theme-btn {
+  .header h1 {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -.025em;
+    line-height: 1.15;
+  }
+  .header-actions { display: flex; gap: 8px; padding-bottom: 4px; }
+  .icon-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    cursor: pointer;
-    touch-action: manipulation;
-    font-size: 18px;
+    border: none;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .15s, transform .1s;
+    transition: transform .15s var(--ease), background .15s;
     flex-shrink: 0;
   }
-  .theme-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
+  .icon-btn:active { transform: scale(.9); background: var(--surface-2); }
+
+  /* ── Today summary ── */
+  .summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+  }
+  .ring { width: 46px; height: 46px; flex-shrink: 0; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 5.5; }
+  .ring .track { stroke: var(--surface-2); }
+  .ring .bar { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .5s var(--ease); }
+  .summary-text { min-width: 0; }
+  .summary-text strong { display: block; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+  .summary-text span { font-size: 13px; color: var(--text-2); }
 
   /* ── Add Habit ── */
-  .add-form {
-    display: flex;
-    gap: 10px;
-  }
+  .add-form { position: relative; display: flex; }
   .add-form input {
     flex: 1;
     min-width: 0;
-    padding: 14px 16px;
+    height: 52px;
+    padding: 0 60px 0 18px;
     font-size: 16px;
-    font-family: var(--font);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
-    background: var(--color-surface);
-    color: var(--color-text);
-    outline: none;
-    transition: border-color .15s;
-  }
-  .add-form input:focus {
-    border-color: var(--color-primary);
-  }
-  .add-form input::placeholder {
-    color: #9ca3af;
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 14px 22px;
-    font-size: 16px;
-    font-weight: 600;
     font-family: var(--font);
     border: none;
-    border-radius: var(--radius);
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background .15s, transform .1s;
-    white-space: nowrap;
-    min-height: 48px;
-    min-width: 48px;
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    outline: none;
+    transition: box-shadow .15s;
+    -webkit-user-select: text;
+    user-select: text;
   }
-  .btn:active { transform: scale(.97); }
-  .btn-primary {
-    background: var(--color-primary);
-    color: #fff;
+  .add-form input::placeholder { color: var(--text-3); }
+  .add-form input:focus { box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow); }
+  .add-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: var(--on-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s var(--ease);
   }
-  .btn-primary:hover { background: var(--color-primary-hover); }
-  .btn-ghost {
-    background: transparent;
-    color: var(--color-text-secondary);
-    padding: 8px 12px;
-    min-height: 44px;
-  }
-  .btn-danger {
-    background: var(--color-danger-bg);
-    color: var(--color-danger);
-  }
-  .btn-outline {
-    background: var(--color-surface);
-    border: 2px solid var(--color-border);
-    color: var(--color-text);
-  }
+  .add-btn:active { transform: scale(.9); }
+  .add-btn .i { stroke-width: 2.6; }
 
   /* ── Habits List ── */
-  .habits-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .habits-list { display: flex; flex-direction: column; gap: 12px; }
   .empty-state {
     text-align: center;
-    padding: 48px 20px;
-    color: var(--color-text-secondary);
+    padding: 40px 20px;
+    color: var(--text-2);
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
   }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 15px; line-height: 1.5; }
+  .empty-icon {
+    width: 56px; height: 56px; margin: 0 auto 14px;
+    border-radius: 18px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-icon .i { width: 26px; height: 26px; }
+  .empty-state strong { display: block; font-size: 17px; color: var(--text); margin-bottom: 4px; }
+  .empty-state p { font-size: 15px; line-height: 1.45; }
 
   /* ── Habit Card ── */
   .habit-card {
-    background: var(--color-surface);
-    border-radius: var(--radius);
-    padding: 16px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px 16px;
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    border: 1px solid var(--color-border);
-    transition: border-color .2s;
+    gap: 14px;
+    transition: box-shadow .2s, transform .2s var(--ease);
   }
   .habit-card.dragging {
-    opacity: 0.92;
-    box-shadow: 0 8px 25px rgba(0,0,0,.15);
+    box-shadow: var(--shadow-lg);
+    transform: scale(1.02);
     z-index: 50;
     position: relative;
-    transition: box-shadow .15s;
   }
-
-  /* ── Drag Handle ── */
+  .habit-row { display: flex; align-items: center; gap: 4px; }
   .drag-handle {
     cursor: grab;
     touch-action: none;
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    padding: 6px 10px 6px 2px;
-    user-select: none;
+    color: var(--text-3);
     -webkit-user-select: none;
+    user-select: none;
     -webkit-touch-callout: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 2px;
-    line-height: 1;
-    flex-shrink: 0;
-    min-width: 36px;
+    width: 28px;
     min-height: 44px;
+    margin-left: -6px;
+    flex-shrink: 0;
   }
+  .drag-handle .i { width: 18px; height: 18px; fill: currentColor; stroke: none; }
   .drag-handle:active { cursor: grabbing; }
-  .habit-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
+  .habit-info { flex: 1; min-width: 0; }
   .habit-name {
+    display: block;
     font-size: 17px;
     font-weight: 600;
-    flex: 1;
-    min-width: 0;
+    letter-spacing: -.01em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .habit-streak {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
     font-size: 13px;
     font-weight: 600;
-    color: var(--color-primary);
-    background: var(--color-streak-bg);
-    padding: 4px 10px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
+    color: var(--flame);
   }
-  .habit-streak.zero { color: var(--color-text-secondary); background: var(--color-streak-zero-bg); }
+  .habit-streak .i { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+  .habit-streak.zero { color: var(--text-3); font-weight: 500; }
 
-  /* ── Day Dots ── */
-  .day-grid {
-    display: flex;
-    gap: 6px;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-  .day-dot {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid var(--color-border);
-    background: var(--color-surface);
-    cursor: pointer;
-    touch-action: manipulation;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    transition: background .15s, border-color .15s, color .15s, transform .1s;
-    flex-shrink: 0;
-  }
-  .day-dot:active { transform: scale(.92); }
-  .day-dot.done {
-    background: var(--color-success);
-    border-color: var(--color-success);
-    color: #fff;
-  }
-  .day-dot.today { border-color: var(--color-primary); border-width: 2.5px; }
-
-  /* ── Month Nav ── */
-  .month-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  .month-nav-btn {
+  .more-btn {
     width: 36px;
     height: 36px;
+    border: none;
     border-radius: 50%;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    cursor: pointer;
-    touch-action: manipulation;
-    font-size: 16px;
-    color: var(--color-text-secondary);
+    background: transparent;
+    color: var(--text-3);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .15s;
     flex-shrink: 0;
+    transition: background .15s, color .15s;
   }
-  .month-nav-btn:active { background: var(--color-nav-active-bg); }
-  .month-nav-label {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-text);
-    min-width: 130px;
-    text-align: center;
+  .more-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+
+  .check-btn {
+    width: 46px;
+    height: 46px;
+    margin-left: 4px;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .2s, color .2s, transform .15s var(--ease);
+  }
+  .check-btn .i { width: 24px; height: 24px; stroke-width: 2.6; }
+  .check-btn.done { background: var(--accent); color: var(--on-accent); }
+  .check-btn:active { transform: scale(.9); }
+
+  .pop { animation: pop .38s var(--ease); }
+  @keyframes pop {
+    0% { transform: scale(.85); }
+    45% { transform: scale(1.12); }
+    100% { transform: scale(1); }
   }
 
-  /* ── Calendar Grid ── */
+  /* ── Week strip ── */
+  .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .day-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    min-width: 0;
+  }
+  .day-dot .dl {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .day-dot .dn {
+    width: 100%;
+    max-width: 42px;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: var(--surface-2);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+    transition: background .15s, color .15s, transform .15s var(--ease);
+  }
+  .day-dot:active .dn { transform: scale(.9); }
+  .day-dot.done .dn { background: var(--accent); color: var(--on-accent); }
+  .day-dot.today .dl { color: var(--accent); }
+  .day-dot.today:not(.done) .dn { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); }
+
+  /* ── Month view ── */
+  .month-nav { display: flex; align-items: center; justify-content: space-between; }
+  .month-nav-label { font-size: 15px; font-weight: 700; }
+  .month-nav-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s var(--ease);
+  }
+  .month-nav-btn:active { transform: scale(.9); }
+  .month-nav-btn .i { width: 18px; height: 18px; }
   .calendar { width: 100%; }
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-head {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding-bottom: 2px;
   }
   .cal-cell {
     aspect-ratio: 1;
-    border-radius: 50%;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    cursor: pointer;
-    touch-action: manipulation;
+    border: none;
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    transition: background .15s, border-color .15s, color .15s, transform .1s;
-  }
-  .cal-cell:active { transform: scale(.92); }
-  .cal-cell.done {
-    background: var(--color-success);
-    border-color: var(--color-success);
-    color: #fff;
-  }
-  .cal-cell.today { border-color: var(--color-primary); border-width: 2.5px; }
-  .cal-cell.empty {
-    border-color: transparent;
-    background: transparent;
-    cursor: default;
-    pointer-events: none;
-  }
-  .cal-cell.empty:active { transform: none; }
-
-  /* ── View Toggle ── */
-  .view-toggle {
-    display: flex;
-    gap: 0;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1.5px solid var(--color-border);
-  }
-  .view-toggle button {
-    padding: 7px 14px;
     font-size: 13px;
     font-weight: 600;
-    font-family: var(--font);
-    border: none;
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background .15s, color .15s;
-    min-height: 34px;
+    transition: background .15s, color .15s, transform .15s var(--ease);
   }
-  .view-toggle button.active {
-    background: var(--color-primary);
-    color: #fff;
-  }
+  .cal-cell:active { transform: scale(.9); }
+  .cal-cell.done { background: var(--accent); color: var(--on-accent); }
+  .cal-cell.today:not(.done) { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); }
+  .cal-cell.empty { background: transparent; pointer-events: none; }
 
-  /* ── Card Actions ── */
+  /* ── Card actions (behind the ⋯ button) ── */
   .card-actions {
     display: flex;
-    gap: 6px;
-    justify-content: space-between;
     align-items: center;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--separator);
   }
-  .card-actions-right {
-    display: flex;
-    gap: 6px;
-    align-items: center;
+  .card-actions .spacer { flex: 1; }
+  .view-toggle {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
   }
-  .reorder-btns { display: flex; gap: 4px; }
+  .view-toggle button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s, color .15s;
+  }
+  .view-toggle button.active {
+    background: var(--seg-active);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+  }
+  .reorder-btns { display: flex; gap: 6px; }
   .mini-btn {
     width: 36px;
     height: 36px;
+    border: none;
     border-radius: var(--radius-sm);
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    touch-action: manipulation;
-    font-size: 11px;
+    background: var(--surface-2);
+    color: var(--text-2);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background .15s;
     flex-shrink: 0;
   }
-  .mini-btn:active { background: var(--color-nav-active-bg); }
-  .card-actions .btn {
-    font-size: 13px;
-    padding: 8px 14px;
+  .mini-btn:active { transform: scale(.92); }
+  .mini-btn .i { width: 18px; height: 18px; }
+  .mini-btn.danger { background: var(--danger-soft); color: var(--danger); }
+
+  /* ── Buttons (dialogs, backup card) ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 50px;
+    padding: 0 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 17px;
+    font-weight: 600;
+    font-family: var(--font);
+    white-space: nowrap;
+    transition: transform .15s var(--ease), opacity .15s;
+  }
+  .btn:active { transform: scale(.97); opacity: .85; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-ghost { background: var(--surface-2); color: var(--text); }
+  .btn-tonal {
     min-height: 36px;
+    padding: 0 14px;
     border-radius: var(--radius-sm);
+    font-size: 14px;
+    background: var(--accent-soft);
+    color: var(--accent);
   }
 
-  /* ── Footer ── */
-  .footer {
+  /* ── Backup card ── */
+  .backup-card {
     display: flex;
-    gap: 10px;
-    justify-content: center;
-    padding-top: 8px;
-    border-top: 1px solid var(--color-border);
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px 14px 16px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
   }
-  .footer .btn { font-size: 14px; flex: 1; max-width: 200px; }
+  .backup-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .backup-text { flex: 1; min-width: 0; }
+  .backup-text strong { display: block; font-size: 15px; font-weight: 600; }
+  .backup-text span { font-size: 13px; color: var(--text-2); }
+  .backup-text span.warn { color: var(--danger); font-weight: 600; }
+  .backup-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  #importFile { display: none; }
 
   /* ── Toast ── */
   .toast {
     position: fixed;
-    bottom: 40px;
+    bottom: calc(28px + env(safe-area-inset-bottom));
     left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--color-toast-bg);
-    color: var(--color-toast-text);
-    padding: 12px 24px;
-    border-radius: 24px;
-    font-size: 14px;
+    transform: translateX(-50%) translateY(16px) scale(.96);
+    max-width: calc(100% - 32px);
+    width: max-content;
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-size: 15px;
     font-weight: 600;
-    font-family: var(--font);
-    z-index: 100;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    z-index: 150; /* below open sheets so it never covers their buttons */
     opacity: 0;
-    transition: transform .25s ease, opacity .25s ease;
+    transition: transform .3s var(--ease), opacity .3s var(--ease);
     pointer-events: none;
   }
-  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 
-  /* ── Confirm Dialog ── */
+  /* ── Bottom sheets (confirm + settings) ── */
   .overlay {
     position: fixed;
     inset: 0;
-    background: var(--color-overlay);
+    background: var(--overlay);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     z-index: 200;
-    padding: 20px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .2s;
+    transition: opacity .25s;
   }
   .overlay.open { opacity: 1; pointer-events: auto; }
   .dialog {
-    background: var(--color-surface);
-    border-radius: var(--radius);
-    padding: 24px;
     width: 100%;
-    max-width: 320px;
+    max-width: 480px;
+    background: var(--surface);
+    border-radius: 26px 26px 0 0;
+    padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
+    box-shadow: var(--shadow-lg);
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    transform: translateY(100%);
+    transition: transform .32s var(--ease);
   }
-  .dialog h3 { font-size: 18px; margin-bottom: 8px; }
-  .dialog p { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px; }
-  .dialog .btn-row { display: flex; gap: 10px; justify-content: center; }
+  .overlay.open .dialog { transform: none; }
+  .dialog::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 5px;
+    margin: 0 auto 16px;
+    border-radius: 3px;
+    background: var(--separator);
+  }
+  .dialog h3 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px; }
+  .dialog p { font-size: 15px; line-height: 1.45; color: var(--text-2); margin-bottom: 22px; }
+  .dialog .btn-row { display: flex; flex-direction: column-reverse; gap: 10px; }
+  .dialog .btn-row .btn { width: 100%; }
 
-  /* ── Import input hidden ── */
-  #importFile { display: none; }
+  /* ── Settings sheet ── */
+  .settings-dialog { text-align: left; }
+  .settings-dialog h3 { text-align: center; margin-bottom: 14px; }
+  .setting-group {
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 0 16px;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 10px 0;
+  }
+  .setting-row + .setting-row { border-top: 1px solid var(--separator); }
+  .setting-label { font-size: 16px; font-weight: 500; color: var(--text); }
+  .setting-label small {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-2);
+    line-height: 1.35;
+    margin-top: 2px;
+    max-width: 200px;
+  }
+  .setting-value { font-size: 15px; color: var(--text-2); text-align: right; }
+  .setting-value.warn { color: var(--danger); font-weight: 600; }
+  .settings-dialog > .btn { width: 100%; margin-top: 12px; }
+
+  /* ── Toggle switch ── */
+  .switch { position: relative; display: inline-block; width: 51px; height: 31px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--separator);
+    border-radius: 31px;
+    transition: background .2s;
+    cursor: pointer;
+  }
+  [data-theme="dark"] .switch .slider { background: #39393d; }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    width: 27px;
+    height: 27px;
+    left: 2px;
+    top: 2px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    transition: transform .25s var(--ease);
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
 
   /* ── Privacy Shield (hide button) ── */
   .shield {
     position: fixed;
     inset: 0;
-    background: var(--color-bg);
+    background: var(--bg);
     z-index: 1000;
     display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
   }
   .shield.show { display: flex; }
   .shield-hint {
@@ -519,146 +650,98 @@
     gap: 10px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-text-secondary);
-    opacity: .35;
+    color: var(--text-2);
+    opacity: .4;
     pointer-events: none;
   }
-  .shield-hint .icon { font-size: 28px; }
-
-  /* ── Hide Button ── */
-  .hide-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    cursor: pointer;
-    touch-action: manipulation;
-    font-size: 17px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background .15s, transform .1s;
-    flex-shrink: 0;
-  }
-  .hide-btn:active { transform: scale(.92); background: var(--color-nav-active-bg); }
+  .shield-hint .i { width: 28px; height: 28px; }
 
   /* ── Pin-up Corner ── */
   .pinup-strip {
     display: flex;
     align-items: center;
-    gap: 14px;
     justify-content: center;
-    padding: 12px 14px;
-    border: 2px dashed var(--color-border);
-    border-radius: 18px;
-    background: var(--color-surface);
+    gap: 14px;
+    padding: 14px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
   }
   .pinup-strip.hidden { display: none; }
   .pinup-slot {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    border: 1.5px solid var(--color-border);
-    background: var(--pinup-bg);
-    cursor: pointer;
-    touch-action: manipulation;
+    width: 86px;
+    height: 86px;
     padding: 0;
+    border: 3px solid var(--surface-2);
+    border-radius: 50%;
+    background: var(--pinup-bg);
     overflow: hidden;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform .1s;
-    -webkit-tap-highlight-color: transparent;
+    transition: transform .15s var(--ease);
   }
   .pinup-slot:active { transform: scale(.94); }
   .pinup-slot svg { width: 100%; height: 100%; display: block; color: var(--pinup-fig); fill: currentColor; }
   .pinup-img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* ── Settings Dialog ── */
-  .settings-dialog { max-width: 340px; text-align: left; }
-  .settings-dialog h3 { margin-bottom: 4px; text-align: center; }
-  .setting-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 0;
-    border-top: 1px solid var(--color-border);
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
-  .setting-label { font-size: 14px; font-weight: 600; color: var(--color-text); }
-  .setting-label small {
-    display: block;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--color-text-secondary);
-    line-height: 1.4;
-    margin-top: 3px;
-    max-width: 180px;
-  }
-  .settings-dialog > .btn { width: 100%; margin-top: 12px; }
-  .setting-value { font-size: 13px; color: var(--color-text-secondary); text-align: right; }
-  .setting-value.warn { color: var(--color-danger); font-weight: 600; }
-  .settings-dialog > .btn.btn-outline { font-size: 14px; }
-
-  /* ── Toggle switch ── */
-  .switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch .slider {
-    position: absolute;
-    inset: 0;
-    background: var(--color-border);
-    border-radius: 28px;
-    transition: background .2s;
-    cursor: pointer;
-  }
-  .switch .slider::before {
-    content: '';
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    left: 3px;
-    top: 3px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform .2s;
-  }
-  .switch input:checked + .slider { background: var(--color-primary); }
-  .switch input:checked + .slider::before { transform: translateX(20px); }
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <header class="header">
-    <div class="header-left">
-      <button class="theme-btn" id="themeBtn" aria-label="Toggle dark mode">☀️</button>
-      <button class="hide-btn" id="hideBtn" aria-label="Hide app content" title="Hide">👁️</button>
+    <div>
+      <span class="header-date" id="headerDate"></span>
       <h1>Habits</h1>
     </div>
-    <span class="header-date" id="headerDate"></span>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"></button>
+      <button class="icon-btn" id="hideBtn" aria-label="Hide app content" title="Hide" data-icon="eyeOff"></button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings" data-icon="sliders"></button>
+    </div>
   </header>
 
+  <section class="summary" id="summary" hidden>
+    <svg class="ring" viewBox="0 0 46 46" aria-hidden="true">
+      <circle class="track" cx="23" cy="23" r="19"/>
+      <circle class="bar" id="ringBar" cx="23" cy="23" r="19" stroke-dasharray="119.38" stroke-dashoffset="119.38"/>
+    </svg>
+    <div class="summary-text">
+      <strong id="summaryTitle"></strong>
+      <span id="summarySub"></span>
+    </div>
+  </section>
+
   <form class="add-form" id="addForm" autocomplete="off">
-    <input type="text" id="habitInput" placeholder="New habit…" maxlength="80" aria-label="New habit name">
-    <button type="submit" class="btn btn-primary" aria-label="Add habit">Add</button>
+    <input type="text" id="habitInput" placeholder="Add a new habit" maxlength="80" aria-label="New habit name" enterkeyhint="done">
+    <button type="submit" class="add-btn" aria-label="Add habit" data-icon="plus"></button>
   </form>
 
   <div class="habits-list" id="habitsList"></div>
 
   <div class="pinup-strip" id="pinupStrip" aria-label="Pin-up corner"></div>
 
-  <div class="footer">
-    <button class="btn btn-outline" id="exportBtn" aria-label="Export data">Export</button>
-    <button class="btn btn-outline" id="importBtn" aria-label="Import data">Import</button>
-    <button class="btn btn-outline" id="settingsBtn" aria-label="Settings">Settings</button>
+  <section class="backup-card">
+    <div class="backup-icon" data-icon="download"></div>
+    <div class="backup-text">
+      <strong>Last backup</strong>
+      <span id="backupStatus"></span>
+    </div>
+    <div class="backup-actions">
+      <button class="btn btn-tonal" id="exportBtn" aria-label="Export data">Export</button>
+      <button class="btn btn-tonal" id="importBtn" aria-label="Import data">Import</button>
+    </div>
     <input type="file" id="importFile" accept=".json,application/json">
-  </div>
+  </section>
 </div>
 
 <div class="shield" id="privacyShield" aria-label="Hidden — tap to show">
   <div class="shield-hint">
-    <span class="icon">👁️</span>
+    <span data-icon="eye"></span>
     <span>Tap to show</span>
   </div>
 </div>
@@ -666,24 +749,26 @@
 <div class="overlay" id="settingsOverlay">
   <div class="dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <h3 id="settingsTitle">Settings</h3>
-    <div class="setting-row">
-      <div class="setting-label">Pin-up corner</div>
-      <label class="switch">
-        <input type="checkbox" id="pinupToggle" aria-label="Show pin-up corner">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="setting-row">
-      <div class="setting-label">Last backup
-        <small>Export regularly — the file is your real backup.</small>
+    <div class="setting-group">
+      <div class="setting-row">
+        <div class="setting-label">Pin-up corner</div>
+        <label class="switch">
+          <input type="checkbox" id="pinupToggle" aria-label="Show pin-up corner">
+          <span class="slider"></span>
+        </label>
       </div>
-      <span class="setting-value" id="lastExportInfo"></span>
+      <div class="setting-row">
+        <div class="setting-label">Last backup
+          <small>Export regularly — the file is your real backup.</small>
+        </div>
+        <span class="setting-value" id="lastExportInfo"></span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Storage</div>
+        <span class="setting-value" id="persistInfo"></span>
+      </div>
     </div>
-    <div class="setting-row">
-      <div class="setting-label">Storage</div>
-      <span class="setting-value" id="persistInfo"></span>
-    </div>
-    <button class="btn btn-outline" id="undoImportBtn" hidden>Undo last import</button>
+    <button class="btn btn-ghost" id="undoImportBtn" hidden>Undo last import</button>
     <button class="btn btn-primary" id="settingsClose">Done</button>
   </div>
 </div>
@@ -733,6 +818,38 @@ const pinupStrip  = $('#pinupStrip');
 const lastExportInfo = $('#lastExportInfo');
 const persistInfo = $('#persistInfo');
 const undoImportBtn = $('#undoImportBtn');
+const summaryEl   = $('#summary');
+const ringBar     = $('#ringBar');
+const summaryTitle = $('#summaryTitle');
+const summarySub  = $('#summarySub');
+const backupStatus = $('#backupStatus');
+const RING_C = 2 * Math.PI * 19; // circumference of the progress ring
+
+// ── Icons (inline SVG, 24×24 line style) ──
+const ICONS = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  eye: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M9.9 9.9a3 3 0 1 0 4.2 4.2"/><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M2 2l20 20"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  more: '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
+  grip: '<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>',
+  flame: '<path d="M12 2c1 3.5 5 5.8 5 11a5 5 0 0 1-10 0c0-2.4 1.1-4 2.4-5.2.2 1.7 1 2.9 2.1 3.4C11 9 10.8 5.3 12 2z"/>',
+  left: '<path d="M15 18l-6-6 6-6"/>',
+  right: '<path d="M9 18l6-6-6-6"/>',
+  up: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+  down: '<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+};
+const SOLID_ICONS = new Set(['more', 'grip', 'flame']);
+
+function icon(name) {
+  return `<svg class="i${SOLID_ICONS.has(name) ? ' solid' : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
+}
 
 // ── State ──
 const STORAGE_KEY = 'habits_v1';
@@ -903,6 +1020,7 @@ async function exportData() {
 function markExported() {
   state.settings.lastExport = today();
   saveState();
+  updateBackupStatus();
   toast('Exported!');
 }
 
@@ -1054,52 +1172,80 @@ function buildCalendar(offset) {
 }
 
 // ── Render ──
+// Per-card "⋯" menu state (in memory only, like the view mode)
+const expanded = new Set();
+// The cell that was just toggled — gets a little pop animation once
+let justToggled = null;
+
+function renderSummary() {
+  const n = state.habits.length;
+  summaryEl.hidden = n === 0;
+  if (n === 0) return;
+  const t = today();
+  const done = state.habits.filter(h => h.completed.includes(t)).length;
+  ringBar.style.strokeDashoffset = RING_C * (1 - done / n);
+  summaryTitle.textContent = done === n ? 'All done today' : `${done} of ${n} done today`;
+  summarySub.textContent = done === n ? 'Nice work — every habit checked off.'
+    : `${n - done} habit${n - done === 1 ? '' : 's'} left`;
+}
+
 function render() {
   headerDate.textContent = new Date().toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric'
+    weekday: 'long', month: 'long', day: 'numeric'
   });
+  renderSummary();
+  updateBackupStatus();
 
   if (state.habits.length === 0) {
     habitsList.innerHTML = `<div class="empty-state">
-      <div class="icon">&#x1F4AA;</div>
-      <p>No habits yet.<br>Add one to get started.</p>
+      <div class="empty-icon">${icon('target')}</div>
+      <strong>No habits yet</strong>
+      <p>Add your first habit above to start a streak.</p>
     </div>`;
     return;
   }
+
+  const isToday = today();
+  const popKey = justToggled;
+  justToggled = null;
 
   habitsList.innerHTML = state.habits.map(h => {
     const hid = esc(h.id);
     const completedSet = new Set(h.completed);
     const streak = calcStreak(h.completed);
-    const isToday = today();
     const mode = getViewMode(h.id);
     const offset = getMonthOffset(h.id);
+    const open = expanded.has(h.id);
+    const doneToday = completedSet.has(isToday);
+    const pops = date => popKey === `${h.id}|${date}` && completedSet.has(date);
 
     let bodyHtml;
     if (mode === 'month') {
       const cal = buildCalendar(offset);
+      const headHtml = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+        .map(d => `<span class="cal-head">${d}</span>`).join('');
       const calCellsHtml = cal.cells.map(c => {
         if (c.empty) return '<span class="cal-cell empty"></span>';
         const done = completedSet.has(c.date);
         const isT = c.date === isToday;
-        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}"
+        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}${pops(c.date) ? ' pop' : ''}"
           data-habit="${hid}" data-date="${c.date}"
           aria-label="${c.date}${done ? ' done' : ''}">${c.dayNum}</button>`;
       }).join('');
 
       bodyHtml = `
         <div class="month-nav">
-          <button class="month-nav-btn" data-month-prev="${hid}" aria-label="Previous month">&#8249;</button>
+          <button class="month-nav-btn" data-month-prev="${hid}" aria-label="Previous month">${icon('left')}</button>
           <span class="month-nav-label">${monthYearLabel(offset)}</span>
-          <button class="month-nav-btn" data-month-next="${hid}" aria-label="Next month">&#8250;</button>
+          <button class="month-nav-btn" data-month-next="${hid}" aria-label="Next month">${icon('right')}</button>
         </div>
         <div class="calendar">
-          <div class="calendar-grid">${calCellsHtml}</div>
+          <div class="calendar-grid">${headHtml}${calCellsHtml}</div>
         </div>`;
     } else {
       // This week Monday–Sunday
       const dayOfWeek = (new Date().getDay() + 6) % 7; // 0=Mon
-      const monday = dateAdd(today(), -dayOfWeek);
+      const monday = dateAdd(isToday, -dayOfWeek);
       const days = [];
       for (let i = 0; i < 7; i++) {
         days.push(dateAdd(monday, i));
@@ -1110,33 +1256,40 @@ function render() {
         return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}"
           data-habit="${hid}" data-date="${d}"
           aria-label="${d} ${done ? 'done' : 'not done'}${isT ? ' (today)' : ''}"
-          title="${d}">${dayName(d)}</button>`;
+          title="${d}"><span class="dl">${dayName(d)}</span><span class="dn${pops(d) ? ' pop' : ''}">${Number(d.slice(8))}</span></button>`;
       }).join('');
       bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
     }
 
+    const actionsHtml = open ? `
+      <div class="card-actions">
+        <div class="view-toggle">
+          <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">Week</button>
+          <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
+        </div>
+        <span class="spacer"></span>
+        <div class="reorder-btns">
+          <button class="mini-btn" data-move-up="${hid}" aria-label="Move up">${icon('up')}</button>
+          <button class="mini-btn" data-move-down="${hid}" aria-label="Move down">${icon('down')}</button>
+        </div>
+        <button class="mini-btn danger" data-delete="${hid}" aria-label="Delete habit">${icon('trash')}</button>
+      </div>` : '';
+
     return `<div class="habit-card" id="card-${hid}">
       <div class="habit-row">
-        <span class="drag-handle" data-drag="${hid}" aria-label="Drag to reorder">⋮⋮</span>
-        <span class="habit-name" title="${esc(h.name)}">${esc(h.name)}</span>
-        <span class="habit-streak${streak === 0 ? ' zero' : ''}">
-          &#x1F525; ${streak}
-        </span>
+        <span class="drag-handle" data-drag="${hid}" aria-label="Drag to reorder">${icon('grip')}</span>
+        <div class="habit-info">
+          <span class="habit-name" title="${esc(h.name)}">${esc(h.name)}</span>
+          <span class="habit-streak${streak === 0 ? ' zero' : ''}">${icon('flame')}${
+            streak === 0 ? 'No streak yet' : `${streak} day${streak === 1 ? '' : 's'}`}</span>
+        </div>
+        <button class="more-btn" data-more="${hid}" aria-label="More options" aria-expanded="${open}">${icon('more')}</button>
+        <button class="check-btn${doneToday ? ' done' : ''}${pops(isToday) ? ' pop' : ''}"
+          data-habit="${hid}" data-date="${isToday}" aria-pressed="${doneToday}"
+          aria-label="${doneToday ? 'Done today — tap to undo' : 'Mark done today'}">${icon('check')}</button>
       </div>
       ${bodyHtml}
-      <div class="card-actions">
-        <div class="reorder-btns">
-          <button class="mini-btn" data-move-up="${hid}" aria-label="Move up">▲</button>
-          <button class="mini-btn" data-move-down="${hid}" aria-label="Move down">▼</button>
-        </div>
-        <div class="card-actions-right">
-          <div class="view-toggle">
-            <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">7d</button>
-            <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
-          </div>
-          <button class="btn btn-danger" data-delete="${hid}">Delete</button>
-        </div>
-      </div>
+      ${actionsHtml}
     </div>`;
   }).join('');
 
@@ -1144,8 +1297,15 @@ function render() {
   habitsList.querySelectorAll('.day-dot').forEach(btn => {
     btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
   });
-  habitsList.querySelectorAll('.cal-cell').forEach(btn => {
+  habitsList.querySelectorAll('.cal-cell, .check-btn').forEach(btn => {
     btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
+  });
+  habitsList.querySelectorAll('[data-more]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.more;
+      if (expanded.has(id)) expanded.delete(id); else expanded.add(id);
+      render();
+    });
   });
   habitsList.querySelectorAll('[data-month-prev]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1283,6 +1443,7 @@ function toggleDay(habitId, dateStr) {
   const habit = state.habits.find(h => h.id === habitId);
   if (!habit) return;
   const idx = habit.completed.indexOf(dateStr);
+  justToggled = `${habitId}|${dateStr}`;
   if (idx > -1) {
     habit.completed.splice(idx, 1);
   } else {
@@ -1365,12 +1526,12 @@ function applyTheme(theme) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (theme === 'dark') {
     document.documentElement.dataset.theme = 'dark';
-    themeBtn.textContent = '🌙';
-    if (meta) meta.content = '#0f0f1a';
+    themeBtn.innerHTML = icon('moon');
+    if (meta) meta.content = '#000000';
   } else {
     delete document.documentElement.dataset.theme;
-    themeBtn.textContent = '☀️';
-    if (meta) meta.content = '#4f46e5';
+    themeBtn.innerHTML = icon('sun');
+    if (meta) meta.content = '#f2f2f7';
   }
 }
 
@@ -1391,16 +1552,28 @@ if (window.matchMedia) {
 }
 
 // ── Settings dialog ──
-function syncSettingsUI() {
-  pinupToggle.checked = state.settings.showPinup;
-
+function lastExportAge() {
   const last = state.settings.lastExport;
   const age = last ? daysBetween(last, today()) : null;
-  lastExportInfo.textContent = last == null ? 'Never'
+  const label = last == null ? 'Never'
     : age <= 0 ? 'Today'
     : age === 1 ? 'Yesterday'
     : `${age} days ago`;
-  lastExportInfo.classList.toggle('warn', last == null || age >= BACKUP_NUDGE_DAYS);
+  return { label, stale: last == null || age >= BACKUP_NUDGE_DAYS };
+}
+
+function updateBackupStatus() {
+  const { label, stale } = lastExportAge();
+  backupStatus.textContent = label;
+  backupStatus.classList.toggle('warn', stale);
+}
+
+function syncSettingsUI() {
+  pinupToggle.checked = state.settings.showPinup;
+
+  const { label, stale } = lastExportAge();
+  lastExportInfo.textContent = label;
+  lastExportInfo.classList.toggle('warn', stale);
 
   persistInfo.textContent = '…';
   if (navigator.storage && navigator.storage.persisted) {
@@ -1732,6 +1905,7 @@ function applyPinupVisibility() {
 
 // ── Init ──
 function init() {
+  document.querySelectorAll('[data-icon]').forEach(el => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon)));
   loadState();
   ensureSettings(); // also covers first launch (no stored state yet)
   applyTheme(getTheme());
