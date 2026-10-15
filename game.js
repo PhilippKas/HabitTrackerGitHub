@@ -209,6 +209,9 @@
       critDays,
       perfectDays,
       dayStats,
+      doneToday: !!dayStats.get(todayStr) && dayStats.get(todayStr).active > 0
+        && dayStats.get(todayStr).done === dayStats.get(todayStr).active,
+      anyToday: !!dayStats.get(todayStr) && dayStats.get(todayStr).done > 0,
     };
   }
 

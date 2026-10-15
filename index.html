@@ -859,6 +859,41 @@
   .rec em { font-style: normal; font-size: 12px; color: var(--text-3); }
   .rec strong { font-size: 17px; font-weight: 800; min-width: 28px; text-align: right; }
 
+
+  /* Evolving avatar (avatar.js) */
+  .av { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+  .av > svg { display: block; width: 100%; height: 100%; }
+  .av .av-pet { position: absolute; right: -7px; bottom: -7px; width: 46%; height: 46%; }
+  .av .av-pet svg { display: block; width: 100%; height: 100%; }
+  .sheet-head .av { width: 104px; height: 104px; }
+  .sheet-head .av .av-pet { right: -9px; bottom: -9px; }
+  .sheet-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .sheet-line { font-size: 13px; color: var(--text-2); }
+  .sheet-line b { color: var(--text); font-weight: 600; }
+  .next-up { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius); }
+  .next-up .av { width: 46px; height: 46px; opacity: .45; }
+  .next-up div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .next-up strong { font-size: 14px; font-weight: 700; }
+  .next-up span { font-size: 12px; color: var(--text-2); }
+  .lock-tag { font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 2px 6px; background: var(--neon-ink); color: var(--neon-yellow); clip-path: var(--cut); flex-shrink: 0; }
+  .ups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .up { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; background: var(--surface-2); color: var(--text-2); }
+  .up b { color: var(--neon-cyan-text); font-weight: 800; margin-right: 4px; }
+  .look-preview { display: flex; justify-content: center; padding: 6px 0 4px; }
+  .look-preview .av { width: 132px; height: 132px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch {
+    width: 40px; height: 40px; padding: 0;
+    border: none; border-radius: 50%;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,.12);
+  }
+  .swatch.on { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
+  .look-name { width: 100%; text-align: left; background: var(--surface-2); }
+  .levelup .av { width: 150px; height: 150px; margin-bottom: 10px; }
+  .levelup .ups { justify-content: center; max-width: 320px; }
+  .levelup .up { background: rgba(255,255,255,.1); color: #fff; }
+  .levelup .up b { color: var(--neon-yellow); }
+
   /* Celebrations */
   .xp-float {
     position: fixed;
@@ -1015,15 +1050,17 @@
     <div class="sheet-head">
       <span class="char-avatar" id="sheetAvatar"></span>
       <div>
-        <strong id="sheetName"></strong>
+        <span class="sheet-title"><strong id="sheetName"></strong><span class="char-lvl" id="sheetLvl"></span></span>
         <span class="char-meta" id="sheetMeta"></span>
+        <span class="sheet-line" id="sheetPet"></span>
+        <span class="sheet-line" id="sheetNext"></span>
       </div>
-      <span class="char-lvl" id="sheetLvl"></span>
     </div>
     <div class="view-toggle sheet-tabs" id="sheetTabs">
       <button data-tab="stats" class="active">Stats</button>
       <button data-tab="badges">Badges</button>
       <button data-tab="records">Records</button>
+      <button data-tab="look" id="lookTab">Look</button>
     </div>
     <div class="sheet-body" id="sheetBody"></div>
     <button class="btn btn-primary" id="charClose">Done</button>
@@ -1044,6 +1081,7 @@
 </div>
 
 <script src="./game.js"></script>
+<script src="./avatar.js"></script>
 <script>
 /* ─────────────────────────────────────
    Habit Tracker — single-file PWA
@@ -1094,6 +1132,9 @@ const sheetAvatar = $('#sheetAvatar');
 const sheetName   = $('#sheetName');
 const sheetMeta   = $('#sheetMeta');
 const sheetLvl    = $('#sheetLvl');
+const sheetPet    = $('#sheetPet');
+const sheetNext   = $('#sheetNext');
+const lookTab     = $('#lookTab');
 const sheetTabs   = $('#sheetTabs');
 const sheetBody   = $('#sheetBody');
 const charClose   = $('#charClose');
@@ -1900,10 +1941,79 @@ function shortDate(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-US', opts);
 }
 
+// ── Avatar (avatar.js) — derived from level + today's condition ──
+function avatarLook() {
+  return window.Avatar ? window.Avatar.normalize(state.settings.avatar) : null;
+}
+
+function avatarHtml(p) {
+  const A = window.Avatar, look = avatarLook(), c = A.condition(p);
+  return A.runner({ level: p.level, ...look, glow: c.glow, glitch: c.glitch })
+    + `<span class="av-pet">${A.pet({ level: p.level, ...look, mood: c.mood })}</span>`;
+}
+
+// Runner + pet if avatar.js loaded, otherwise the class icon.
+function setAvatar(el, p) {
+  if (window.Avatar) {
+    el.className = 'av';
+    el.innerHTML = avatarHtml(p);
+  } else {
+    el.className = 'char-avatar';
+    el.innerHTML = icon(p.clsIcon);
+  }
+}
+
+function evolutionHtml(p) {
+  const A = window.Avatar;
+  if (!A) return '';
+  const nx = A.next(p.level);
+  const look = avatarLook();
+  const got = A.EVOLUTION.filter(e => e.level > 1 && e.level <= p.level).reverse();
+  const pr = A.prestige(p.level);
+  return `<h4 class="sheet-h">Evolution</h4>
+    <div class="next-up">
+      <span class="av">${A.runner({ level: nx.level, ...look })}<span class="av-pet">${A.pet({ level: nx.level, ...look })}</span></span>
+      <div><strong>LVL ${nx.level} · ${esc(nx.label)}</strong><span>${nx.who === 'pet' ? `${esc(look.petName)} evolves` : 'Your runner upgrades'} at level ${nx.level}</span></div>
+      <span class="lock-tag">LOCKED</span>
+    </div>
+    ${got.length || pr ? `<div class="ups">${pr ? `<span class="up"><b>LVL ${p.level}</b>Prestige ${pr}</span>` : ''}${got.map(e =>
+      `<span class="up"><b>${e.level}</b>${esc(e.label)}</span>`).join('')}</div>` : ''}`;
+}
+
+function lookHtml(p) {
+  const A = window.Avatar, look = avatarLook();
+  const sw = (key, label) => `<h4 class="sheet-h">${label}</h4><div class="swatches">${
+    Object.entries(A.PALETTES[key]).map(([k, hex]) =>
+      `<button class="swatch${look[key] === k ? ' on' : ''}" data-look="${key}" data-val="${k}"
+        style="background:${hex}" aria-label="${label} ${k}" aria-pressed="${look[key] === k}"></button>`).join('')}</div>`;
+  return `<div class="look-preview"><span class="av">${avatarHtml(p)}</span></div>
+    ${sw('skin', 'Skin')}${sw('hair', 'Hair')}${sw('neon', 'Neon')}
+    <h4 class="sheet-h">Pet name</h4>
+    <input type="text" class="setting-input look-name" id="petNameInput" maxlength="16"
+      placeholder="${esc(A.DEFAULTS.petName)}" value="${esc(state.settings.avatar && state.settings.avatar.petName || '')}" autocomplete="off" enterkeyhint="done">`;
+}
+
+function setLook(key, val) {
+  const cur = (state.settings.avatar && typeof state.settings.avatar === 'object') ? state.settings.avatar : {};
+  const next = { ...cur, [key]: val };
+  if (key === 'petName' && !val) delete next.petName;
+  state.settings.avatar = next;
+  saveState();
+  render();
+}
+
+sheetBody.addEventListener('click', e => {
+  const b = e.target.closest('[data-look]');
+  if (b) setLook(b.dataset.look, b.dataset.val);
+});
+sheetBody.addEventListener('change', e => {
+  if (e.target.id === 'petNameInput') setLook('petName', e.target.value.trim().slice(0, 16));
+});
+
 function renderCharacter() {
   if (!progress || !gameOn()) return;
   const p = progress;
-  charAvatar.innerHTML = icon(p.clsIcon);
+  setAvatar(charAvatar, p);
   charName.textContent = handle();
   charLvl.textContent = `LVL ${p.level}`;
   charMeta.textContent = `${p.rank} · ${p.cls}`;
@@ -1918,13 +2028,23 @@ function renderCharacter() {
 function renderSheet() {
   const p = progress;
   if (!p) return;
-  sheetAvatar.innerHTML = icon(p.clsIcon);
+  const A = window.Avatar;
+  if (!A && sheetTab === 'look') sheetTab = 'stats';
+  setAvatar(sheetAvatar, p);
   sheetName.textContent = handle();
   sheetMeta.textContent = `${p.rank} · ${p.cls}`;
   sheetLvl.textContent = `LVL ${p.level}`;
+  lookTab.hidden = !A;
+  sheetPet.hidden = sheetNext.hidden = !A;
+  if (A) {
+    const nx = A.next(p.level);
+    sheetPet.innerHTML = `<b>${esc(avatarLook().petName)}</b> · ${A.PET_FORM_NAMES[A.petForm(p.level)]}`;
+    sheetNext.innerHTML = `Next: <b>LVL ${nx.level}</b> · ${esc(nx.label)}`;
+  }
   sheetTabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === sheetTab));
   sheetBody.innerHTML = sheetTab === 'badges' ? badgesHtml(p)
     : sheetTab === 'records' ? recordsHtml(p)
+    : sheetTab === 'look' ? lookHtml(p)
     : statsHtml(p);
 }
 
@@ -1949,6 +2069,7 @@ function statsHtml(p) {
     </div>
     <p class="sheet-note">${p.xp.toLocaleString('en-US')} XP total. HP is your Integrity — how much of the last 7 days you kept.
       ${p.integrity < 30 ? '<span class="hp-warn">⚠ Cyberpsychosis risk.</span>' : ''}</p>
+    ${evolutionHtml(p)}
     <h4 class="sheet-h">Attributes</h4>
     <div class="attrs">${rows}</div>
     <p class="sheet-note">Your class comes from your highest attribute. Tap ⋯ on a habit to choose which attribute it trains.
@@ -2018,7 +2139,7 @@ function celebrate(before, after, habitId, date, rect) {
   const gained = after.xp - before.xp;
 
   if (gained > 0 && rect && !reduceMotion()) floatText(`+${gained} XP`, rect, crit);
-  if (leveled) showLevelUp(after);
+  if (leveled) showLevelUp(after, before);
   if ((perfect || leveled) && !reduceMotion()) confetti();
 
   const msgs = [];
@@ -2030,7 +2151,7 @@ function celebrate(before, after, habitId, date, rect) {
     }
   });
   // Let the level-up screen finish before the toasts start.
-  setTimeout(() => msgs.forEach(m => toast(m)), leveled ? 1900 : 0);
+  setTimeout(() => msgs.forEach(m => toast(m)), leveled ? 2800 : 0);
 }
 
 function floatText(text, rect, crit) {
@@ -2043,15 +2164,22 @@ function floatText(text, rect, crit) {
   setTimeout(() => el.remove(), 1000);
 }
 
-function showLevelUp(p) {
+function showLevelUp(p, before) {
+  const A = window.Avatar;
   const el = document.createElement('div');
   el.className = 'levelup';
   el.setAttribute('role', 'alert');
-  el.innerHTML = `<span>LEVEL UP</span><strong>${p.level}</strong><em>${esc(p.rank)}</em>`;
+  let ups = [];
+  if (A) for (let l = (before ? before.level : p.level - 1) + 1; l <= p.level; l++) ups = ups.concat(A.newAt(l));
+  const petName = A ? avatarLook().petName : '';
+  el.innerHTML = `${A ? `<span class="av">${avatarHtml(p)}</span>` : ''}
+    <span>LEVEL UP</span><strong>${p.level}</strong><em>${esc(p.rank)}</em>
+    ${ups.length ? `<div class="ups">${ups.map(u => `<span class="up"><b>NEW</b>${
+      u.who === 'pet' ? `${esc(petName)}: ` : ''}${esc(u.label)}</span>`).join('')}</div>` : ''}`;
   const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
   el.addEventListener('click', close);
   document.body.appendChild(el);
-  setTimeout(close, 1700);
+  setTimeout(close, ups.length ? 2600 : 1700);
 }
 
 function confetti() {
