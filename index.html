@@ -1948,8 +1948,8 @@ function avatarLook() {
 
 function avatarHtml(p) {
   const A = window.Avatar, look = avatarLook(), c = A.condition(p);
-  return A.runner({ level: p.level, ...look, glow: c.glow, glitch: c.glitch })
-    + `<span class="av-pet">${A.pet({ level: p.level, ...look, mood: c.mood })}</span>`;
+  return A.runner({ level: p.level, ...look, mood: c.mood })
+    + `<span class="av-pet">${A.pet({ level: p.level, ...look, mood: c.petMood })}</span>`;
 }
 
 // Runner + pet if avatar.js loaded, otherwise the class icon.
