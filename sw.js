@@ -3,17 +3,14 @@
 // Note: this only manages Cache Storage (the app files). Habit data lives in
 // localStorage, which the service worker never touches.
 
-const CACHE_NAME = 'habits-v4';
+const CACHE_NAME = 'habits-v5';
 // Every file listed here must exist, or the install fails.
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png',
-  './pinups/pinup-1.jpg',
-  './pinups/pinup-2.jpg',
-  './pinups/pinup-3.jpg'
+  './icon-512.png'
 ];
 
 // Bypass the HTTP cache so a re-cache really fetches fresh files.
