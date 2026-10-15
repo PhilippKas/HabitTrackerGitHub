@@ -15,9 +15,12 @@ All user data stays on-device — there is no backend and nothing is sent to a s
  
 ```
 /
-├── index.html      # markup + all app logic
+├── index.html      # markup + app logic
+├── game.js         # gamification rules (pure functions, exposes one `Game` global)
 ├── manifest.json   # app name, icons, "display": "standalone"
 ├── sw.js           # service worker: caches the app shell for offline use
+├── icon.svg        # icon source (PNGs are rendered from it)
+├── icon-180.png    # iOS Home Screen (apple-touch-icon)
 ├── icon-192.png
 └── icon-512.png
 ```
@@ -72,7 +75,14 @@ Keep it flat and JSON-serializable so the whole state round-trips through one
 }
 ```
  
+- Optional, additive fields (no version bump needed; older versions ignore them):
+  `habit.stat` (`"BODY" | "INT" | "TECH" | "COOL" | "EMP"`), `settings.gamify`
+  (false = game UI off), `settings.handle` (runner name), `settings.lastExport`.
 - Store completions as a list of `YYYY-MM-DD` strings — makes streak math trivial.
+- **Game state is derived, never stored.** XP, levels, attributes, crits and badges
+  are recomputed from `completed` by `Game.computeProgress` (game.js). Don't persist
+  any of it. The app must keep working if `game.js` fails to load (`window.Game`
+  missing → game UI hidden).
 - The `version` field is required: check it on load and migrate old data instead
   of breaking it.
 ## PWA requirements
