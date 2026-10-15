@@ -144,17 +144,17 @@
   /* ── Today summary ── */
   .summary {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
     padding: 14px 18px;
     background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
   }
+  .summary-row { display: flex; align-items: center; gap: 14px; }
   .ring { width: 46px; height: 46px; flex-shrink: 0; transform: rotate(-90deg); }
   .ring circle { fill: none; stroke-width: 5.5; }
   .ring .track { stroke: var(--surface-2); }
-  .ring .bar { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .5s var(--ease); }
+  .ring .ring-bar { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .5s var(--ease); }
   .summary-text { min-width: 0; }
   .summary-text strong { display: block; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
   .summary-text span { font-size: 13px; color: var(--text-2); }
@@ -264,11 +264,19 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .habit-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
   .habit-streak {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    margin-top: 2px;
     font-size: 13px;
     font-weight: 600;
     color: var(--flame);
@@ -403,8 +411,10 @@
   /* ── Card actions (behind the ⋯ button) ── */
   .card-actions {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    row-gap: 12px;
     padding-top: 14px;
     border-top: 1px solid var(--separator);
   }
@@ -626,6 +636,277 @@
   }
   .shield-hint .i { width: 28px; height: 28px; }
 
+
+  /* ── Toggle switch ── */
+  .switch { position: relative; display: inline-block; width: 51px; height: 31px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--separator);
+    border-radius: 31px;
+    transition: background .2s;
+    cursor: pointer;
+  }
+  [data-theme="dark"] .switch .slider { background: #39393d; }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    width: 27px;
+    height: 27px;
+    left: 2px;
+    top: 2px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+    transition: transform .25s var(--ease);
+  }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  .setting-input {
+    width: 150px;
+    height: 36px;
+    padding: 0 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    font-family: var(--font);
+    text-align: right;
+    outline: none;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .setting-input:focus { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* ── Game layer (cyberpunk RPG) — flat neon, angular cut corners ── */
+  :root {
+    --neon-cyan: #00e5f2;
+    --neon-magenta: #ff2a6d;
+    --neon-yellow: #fcee0a;
+    --neon-ink: #0a0a12;
+    --neon-cyan-text: #008a94;
+    --neon-magenta-text: #d4134f;
+    --cut: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  [data-theme="dark"] {
+    --neon-cyan-text: #00e5f2;
+    --neon-magenta-text: #ff4f86;
+    --neon-ink: #000000;
+  }
+  body.no-game .game { display: none !important; }
+
+  .char {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px 0 0;
+    border: none;
+    border-top: 1px solid var(--separator);
+    background: none;
+    text-align: left;
+  }
+  .char-avatar {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    background: var(--neon-ink);
+    color: var(--neon-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  }
+  .char-avatar .i { width: 24px; height: 24px; }
+  .char-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .char-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .char-head strong { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .char-lvl {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    background: var(--neon-yellow);
+    color: #0a0a12;
+    clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  }
+  .char-meta {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+  .char-chev { color: var(--text-3); }
+  .meter { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .05em; }
+  .meter-label { width: 18px; color: var(--text-3); }
+  .bar { flex: 1; display: block; height: 6px; background: var(--surface-2); overflow: hidden; }
+  .fill { display: block; height: 100%; transition: width .5s var(--ease); }
+  .fill.xp { background: var(--neon-cyan); }
+  .fill.hp { background: var(--neon-magenta); }
+  .meter-val { min-width: 62px; text-align: right; color: var(--text-2); }
+  .meter-val.warn { color: var(--neon-magenta-text); }
+
+  /* Habit card extras */
+  .best { font-size: 12px; font-weight: 600; color: var(--text-3); }
+  .pb, .stat-chip {
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    flex-shrink: 0;
+  }
+  .pb { background: var(--neon-magenta); color: #fff; }
+  .stat-chip { box-shadow: inset 0 0 0 1.5px currentColor; color: var(--neon-cyan-text); }
+  .stat-picker { display: flex; align-items: center; gap: 4px; width: 100%; }
+  .stat-picker-label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); margin-right: 4px; }
+  .stat-picker button {
+    flex: 1;
+    min-height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .04em;
+  }
+  .stat-picker button.active { background: var(--neon-ink); color: var(--neon-cyan); }
+
+  /* Character sheet */
+  .char-sheet { text-align: left; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; }
+  .sheet-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .sheet-head > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .sheet-head strong { font-size: 20px; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sheet-head .char-avatar { width: 56px; height: 56px; }
+  .sheet-head .char-lvl { font-size: 13px; padding: 4px 9px; }
+  .sheet-tabs { display: flex; width: 100%; }
+  .sheet-tabs button { flex: 1; }
+  .sheet-body { flex: 1; overflow-y: auto; margin: 16px -20px 4px; padding: 0 20px 4px; -webkit-overflow-scrolling: touch; }
+  .sheet-h { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); margin: 18px 0 10px; }
+  .sheet-note { font-size: 13px; line-height: 1.45; color: var(--text-2); margin-top: 10px; }
+  .hp-warn { color: var(--neon-magenta-text); font-weight: 700; }
+  .meters { display: flex; flex-direction: column; gap: 8px; }
+  .meters .meter-label { width: 22px; }
+  .attrs { display: flex; flex-direction: column; gap: 8px; }
+  .attr { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius); }
+  .attr-code {
+    width: 50px;
+    padding: 5px 0;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    background: var(--surface);
+    color: var(--text-2);
+    clip-path: var(--cut);
+    flex-shrink: 0;
+  }
+  .attr.top .attr-code { background: var(--neon-ink); color: var(--neon-cyan); }
+  .attr-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .attr-main strong { font-size: 14px; font-weight: 600; }
+  .attr-main strong em { font-style: normal; font-weight: 500; color: var(--text-3); }
+  .attr-main > span:not(.bar) { font-size: 12px; color: var(--text-2); }
+  .attr-main .bar { flex: none; height: 4px; margin-top: 3px; background: var(--surface); }
+  .attr-score { font-size: 24px; font-weight: 800; min-width: 44px; text-align: right; }
+  .attr-score em { display: block; font-style: normal; font-size: 11px; font-weight: 700; color: var(--text-3); }
+  .badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 12px 6px 10px;
+    text-align: center;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+  }
+  .badge-icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    color: var(--text-3);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+  .badge.on .badge-icon { background: var(--neon-ink); color: var(--neon-yellow); }
+  .badge strong { font-size: 12px; font-weight: 700; line-height: 1.2; }
+  .badge span { font-size: 11px; line-height: 1.25; color: var(--text-2); }
+  .badge em { font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); margin-top: 2px; }
+  .badge.on em { color: var(--neon-cyan-text); }
+  .badge:not(.on) strong, .badge:not(.on) span { opacity: .55; }
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .tile { padding: 12px 14px; background: var(--surface-2); border-radius: var(--radius); }
+  .tile strong { display: block; font-size: 24px; font-weight: 800; }
+  .tile span { font-size: 12px; color: var(--text-2); }
+  .heatmap { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+  .hm { aspect-ratio: 1; border-radius: 3px; background: var(--surface-2); }
+  .hm.future { background: transparent; }
+  .hm.l1, .hm.l2, .hm.l3, .hm.l4 { background: var(--accent); }
+  .hm.l1 { opacity: .3; } .hm.l2 { opacity: .55; } .hm.l3 { opacity: .8; }
+  .records { display: flex; flex-direction: column; background: var(--surface-2); border-radius: var(--radius); padding: 0 14px; }
+  .rec { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+  .rec + .rec { border-top: 1px solid var(--separator); }
+  .rec span { flex: 1; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec em { font-style: normal; font-size: 12px; color: var(--text-3); }
+  .rec strong { font-size: 17px; font-weight: 800; min-width: 28px; text-align: right; }
+
+  /* Celebrations */
+  .xp-float {
+    position: fixed;
+    z-index: 400;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    color: var(--neon-cyan-text);
+    pointer-events: none;
+    white-space: nowrap;
+    animation: xp-float .95s var(--ease) forwards;
+  }
+  .xp-float.crit { color: var(--neon-magenta-text); font-size: 17px; }
+  @keyframes xp-float {
+    from { opacity: 0; transform: translate(-50%, 4px); }
+    20% { opacity: 1; }
+    to { opacity: 0; transform: translate(-50%, -46px); }
+  }
+  .levelup {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(10,10,18,.9);
+    cursor: pointer;
+    animation: lu-in .28s var(--ease);
+    transition: opacity .3s;
+  }
+  .levelup.out { opacity: 0; }
+  .levelup span { font-size: 15px; font-weight: 800; letter-spacing: .32em; color: var(--neon-cyan); }
+  .levelup strong { font-size: 128px; font-weight: 900; line-height: 1; color: var(--neon-yellow); text-shadow: -5px 0 var(--neon-cyan), 5px 0 var(--neon-magenta); }
+  .levelup em { font-style: normal; font-size: 16px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+  @keyframes lu-in { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+  .confetti {
+    position: fixed;
+    top: -16px;
+    z-index: 600;
+    width: 8px;
+    height: 14px;
+    pointer-events: none;
+    animation: fall var(--d) cubic-bezier(.3,.6,.6,1) var(--delay) forwards;
+  }
+  @keyframes fall { to { transform: translate(var(--dx), 108vh) rotate(var(--r)); } }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
@@ -646,14 +927,26 @@
   </header>
 
   <section class="summary" id="summary" hidden>
-    <svg class="ring" viewBox="0 0 46 46" aria-hidden="true">
-      <circle class="track" cx="23" cy="23" r="19"/>
-      <circle class="bar" id="ringBar" cx="23" cy="23" r="19" stroke-dasharray="119.38" stroke-dashoffset="119.38"/>
-    </svg>
-    <div class="summary-text">
-      <strong id="summaryTitle"></strong>
-      <span id="summarySub"></span>
+    <div class="summary-row">
+      <svg class="ring" viewBox="0 0 46 46" aria-hidden="true">
+        <circle class="track" cx="23" cy="23" r="19"/>
+        <circle class="ring-bar" id="ringBar" cx="23" cy="23" r="19" stroke-dasharray="119.38" stroke-dashoffset="119.38"/>
+      </svg>
+      <div class="summary-text">
+        <strong id="summaryTitle"></strong>
+        <span id="summarySub"></span>
+      </div>
     </div>
+    <button class="game char" id="charBlock" aria-label="Open character sheet">
+      <span class="char-avatar" id="charAvatar"></span>
+      <span class="char-main">
+        <span class="char-head"><strong id="charName"></strong><span class="char-lvl" id="charLvl"></span></span>
+        <span class="char-meta" id="charMeta"></span>
+        <span class="meter"><span class="meter-label">XP</span><span class="bar"><span class="fill xp" id="xpFill"></span></span><span class="meter-val" id="xpText"></span></span>
+        <span class="meter" title="Integrity — your last 7 days"><span class="meter-label">HP</span><span class="bar"><span class="fill hp" id="hpFill"></span></span><span class="meter-val" id="hpText"></span></span>
+      </span>
+      <span class="char-chev" data-icon="right"></span>
+    </button>
   </section>
 
   <form class="add-form" id="addForm" autocomplete="off">
@@ -688,6 +981,19 @@
   <div class="dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <h3 id="settingsTitle">Settings</h3>
     <div class="setting-group">
+      <div class="setting-row" id="gameRow">
+        <div class="setting-label">Game mode
+          <small>XP, levels, attributes and badges.</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="gameToggle" aria-label="Game mode">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row game">
+        <div class="setting-label">Runner name</div>
+        <input type="text" id="handleInput" class="setting-input" maxlength="24" placeholder="Runner" autocomplete="off" enterkeyhint="done">
+      </div>
       <div class="setting-row">
         <div class="setting-label">Last backup
           <small>Export regularly — the file is your real backup.</small>
@@ -704,6 +1010,26 @@
   </div>
 </div>
 
+<div class="overlay" id="charOverlay">
+  <div class="dialog char-sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+    <div class="sheet-head">
+      <span class="char-avatar" id="sheetAvatar"></span>
+      <div>
+        <strong id="sheetName"></strong>
+        <span class="char-meta" id="sheetMeta"></span>
+      </div>
+      <span class="char-lvl" id="sheetLvl"></span>
+    </div>
+    <div class="view-toggle sheet-tabs" id="sheetTabs">
+      <button data-tab="stats" class="active">Stats</button>
+      <button data-tab="badges">Badges</button>
+      <button data-tab="records">Records</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <button class="btn btn-primary" id="charClose">Done</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div class="overlay" id="confirmOverlay">
@@ -717,6 +1043,7 @@
   </div>
 </div>
 
+<script src="./game.js"></script>
 <script>
 /* ─────────────────────────────────────
    Habit Tracker — single-file PWA
@@ -753,6 +1080,26 @@ const summaryTitle = $('#summaryTitle');
 const summarySub  = $('#summarySub');
 const backupStatus = $('#backupStatus');
 const RING_C = 2 * Math.PI * 19; // circumference of the progress ring
+const charBlock   = $('#charBlock');
+const charAvatar  = $('#charAvatar');
+const charName    = $('#charName');
+const charLvl     = $('#charLvl');
+const charMeta    = $('#charMeta');
+const xpFill      = $('#xpFill');
+const xpText      = $('#xpText');
+const hpFill      = $('#hpFill');
+const hpText      = $('#hpText');
+const charOverlay = $('#charOverlay');
+const sheetAvatar = $('#sheetAvatar');
+const sheetName   = $('#sheetName');
+const sheetMeta   = $('#sheetMeta');
+const sheetLvl    = $('#sheetLvl');
+const sheetTabs   = $('#sheetTabs');
+const sheetBody   = $('#sheetBody');
+const charClose   = $('#charClose');
+const gameRow     = $('#gameRow');
+const gameToggle  = $('#gameToggle');
+const handleInput = $('#handleInput');
 
 // ── Icons (inline SVG, 24×24 line style) ──
 const ICONS = {
@@ -773,6 +1120,25 @@ const ICONS = {
   trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
   target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  // game: classes
+  crosshair: '<circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>',
+  cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/>',
+  music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  compass: '<circle cx="12" cy="12" r="10"/><path d="M16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z"/>',
+  // game: badges
+  plug: '<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  crown: '<path d="M2 18h20M4 18l-2-11 6 4 4-7 4 7 6-4-2 11"/>',
+  sync: '<circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15l2 2 4-4"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>',
+  star: '<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  dice: '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M7.5 9.5h9L12 17z"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  layers: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5"/>',
 };
 const SOLID_ICONS = new Set(['more', 'grip', 'flame']);
 
@@ -1047,12 +1413,22 @@ confirmCancel.addEventListener('click', () => closeConfirm(false));
 overlay.addEventListener('click', (e) => { if (e.target === overlay) closeConfirm(false); });
 
 // ── Toast ──
+// Messages queue up instead of replacing each other (a check-off can
+// trigger a crit, a badge and a perfect day at once).
 let toastTimer;
+const toastQueue = [];
 function toast(msg) {
-  clearTimeout(toastTimer);
+  if (toastEl.classList.contains('show')) {
+    if (toastQueue.length < 4) toastQueue.push(msg);
+    return;
+  }
   toastEl.textContent = msg;
   toastEl.classList.add('show');
-  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.classList.remove('show');
+    if (toastQueue.length) setTimeout(() => toast(toastQueue.shift()), 300);
+  }, 2200);
 }
 
 // ── View state (per habit, in memory only) ──
@@ -1120,7 +1496,10 @@ function render() {
   headerDate.textContent = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric'
   });
+  document.body.classList.toggle('no-game', !gameOn());
+  progress = window.Game ? window.Game.computeProgress(state, today()) : null;
   renderSummary();
+  renderCharacter();
   updateBackupStatus();
 
   if (state.habits.length === 0) {
@@ -1145,6 +1524,9 @@ function render() {
     const open = expanded.has(h.id);
     const doneToday = completedSet.has(isToday);
     const pops = date => popKey === `${h.id}|${date}` && completedSet.has(date);
+    const best = progress && progress.perHabit[h.id] ? progress.perHabit[h.id].best : 0;
+    const isPB = best >= 3 && streak === best;
+    const stat = window.Game && window.Game.STATS.includes(h.stat) ? h.stat : null;
 
     let bodyHtml;
     if (mode === 'month') {
@@ -1188,8 +1570,15 @@ function render() {
       bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
     }
 
+    const statPicker = window.Game ? `
+        <div class="game stat-picker" role="group" aria-label="Attribute this habit trains">
+          <span class="stat-picker-label">Trains</span>
+          ${['', ...window.Game.STATS].map(s => `<button data-stat-habit="${hid}" data-stat="${s}"
+            class="${(stat || '') === s ? 'active' : ''}"
+            aria-label="${s ? window.Game.STAT_INFO[s].name : 'No attribute'}">${s || '—'}</button>`).join('')}
+        </div>` : '';
     const actionsHtml = open ? `
-      <div class="card-actions">
+      <div class="card-actions">${statPicker}
         <div class="view-toggle">
           <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">Week</button>
           <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
@@ -1207,8 +1596,13 @@ function render() {
         <span class="drag-handle" data-drag="${hid}" aria-label="Drag to reorder">${icon('grip')}</span>
         <div class="habit-info">
           <span class="habit-name" title="${esc(h.name)}">${esc(h.name)}</span>
-          <span class="habit-streak${streak === 0 ? ' zero' : ''}">${icon('flame')}${
-            streak === 0 ? 'No streak yet' : `${streak} day${streak === 1 ? '' : 's'}`}</span>
+          <span class="habit-meta">
+            <span class="habit-streak${streak === 0 ? ' zero' : ''}">${icon('flame')}${
+              streak === 0 ? 'No streak yet' : `${streak} day${streak === 1 ? '' : 's'}`}</span>
+            ${isPB ? '<span class="game pb" title="Personal best">PB</span>'
+              : best > 0 ? `<span class="game best">Best ${best}</span>` : ''}
+            ${stat ? `<span class="game stat-chip" title="${window.Game.STAT_INFO[stat].name}">${stat}</span>` : ''}
+          </span>
         </div>
         <button class="more-btn" data-more="${hid}" aria-label="More options" aria-expanded="${open}">${icon('more')}</button>
         <button class="check-btn${doneToday ? ' done' : ''}${pops(isToday) ? ' pop' : ''}"
@@ -1221,11 +1615,11 @@ function render() {
   }).join('');
 
   // Attach events
-  habitsList.querySelectorAll('.day-dot').forEach(btn => {
-    btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
+  habitsList.querySelectorAll('.day-dot, .cal-cell, .check-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date, btn));
   });
-  habitsList.querySelectorAll('.cal-cell, .check-btn').forEach(btn => {
-    btn.addEventListener('click', () => toggleDay(btn.dataset.habit, btn.dataset.date));
+  habitsList.querySelectorAll('[data-stat-habit]').forEach(btn => {
+    btn.addEventListener('click', () => setHabitStat(btn.dataset.statHabit, btn.dataset.stat));
   });
   habitsList.querySelectorAll('[data-more]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1366,10 +1760,12 @@ function addHabit(name) {
   render();
 }
 
-function toggleDay(habitId, dateStr) {
+function toggleDay(habitId, dateStr, srcEl) {
   const habit = state.habits.find(h => h.id === habitId);
   if (!habit) return;
   const idx = habit.completed.indexOf(dateStr);
+  const before = progress;
+  const rect = srcEl ? srcEl.getBoundingClientRect() : null;
   justToggled = `${habitId}|${dateStr}`;
   if (idx > -1) {
     habit.completed.splice(idx, 1);
@@ -1377,6 +1773,16 @@ function toggleDay(habitId, dateStr) {
     habit.completed.push(dateStr);
     habit.completed.sort();
   }
+  saveState();
+  render();
+  // Celebrate only real transitions caused by this tap — never on load.
+  if (idx === -1 && gameOn() && before && progress) celebrate(before, progress, habitId, dateStr, rect);
+}
+
+function setHabitStat(habitId, stat) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  if (stat) habit.stat = stat; else delete habit.stat;
   saveState();
   render();
 }
@@ -1415,6 +1821,7 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (overlay.classList.contains('open')) closeConfirm(false);
   else if (settingsOverlay.classList.contains('open')) settingsOverlay.classList.remove('open');
+  else if (charOverlay.classList.contains('open')) charOverlay.classList.remove('open');
 });
 
 // ── Keyboard shortcut for add ──
@@ -1478,6 +1885,191 @@ if (window.matchMedia) {
   });
 }
 
+// ── Game layer (derived from check-offs — see game.js) ──
+let progress = null;   // result of Game.computeProgress for the current state
+let sheetTab = 'stats';
+
+const gameOn = () => !!window.Game && state.settings.gamify !== false;
+const handle = () => (typeof state.settings.handle === 'string' && state.settings.handle.trim()) || 'Runner';
+const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const signed = n => (n >= 0 ? `+${n}` : `${n}`);
+
+function shortDate(d) {
+  const opts = { month: 'short', day: 'numeric' };
+  if (d.slice(0, 4) !== today().slice(0, 4)) opts.year = 'numeric';
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', opts);
+}
+
+function renderCharacter() {
+  if (!progress || !gameOn()) return;
+  const p = progress;
+  charAvatar.innerHTML = icon(p.clsIcon);
+  charName.textContent = handle();
+  charLvl.textContent = `LVL ${p.level}`;
+  charMeta.textContent = `${p.rank} · ${p.cls}`;
+  xpFill.style.width = `${(100 * p.levelXp / p.nextXp).toFixed(1)}%`;
+  xpText.textContent = `${p.levelXp} / ${p.nextXp}`;
+  hpFill.style.width = `${p.integrity}%`;
+  hpText.textContent = p.integrity < 30 ? `⚠ ${p.integrity}%` : `${p.integrity}%`;
+  hpText.classList.toggle('warn', p.integrity < 30);
+  if (charOverlay.classList.contains('open')) renderSheet();
+}
+
+function renderSheet() {
+  const p = progress;
+  if (!p) return;
+  sheetAvatar.innerHTML = icon(p.clsIcon);
+  sheetName.textContent = handle();
+  sheetMeta.textContent = `${p.rank} · ${p.cls}`;
+  sheetLvl.textContent = `LVL ${p.level}`;
+  sheetTabs.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.tab === sheetTab));
+  sheetBody.innerHTML = sheetTab === 'badges' ? badgesHtml(p)
+    : sheetTab === 'records' ? recordsHtml(p)
+    : statsHtml(p);
+}
+
+function statsHtml(p) {
+  const G = window.Game;
+  const rows = G.STATS.map(s => {
+    const st = p.stats[s], info = G.STAT_INFO[s];
+    return `<div class="attr${s === p.topStat ? ' top' : ''}">
+      <span class="attr-code">${s}</span>
+      <span class="attr-main">
+        <strong>${info.name} <em>· ${info.cls}</em></strong>
+        <span>${info.hint}</span>
+        <span class="bar"><span class="fill xp" style="width:${(100 * st.score / 20).toFixed(0)}%"></span></span>
+      </span>
+      <span class="attr-score">${st.score}<em>${signed(st.mod)}</em></span>
+    </div>`;
+  }).join('');
+  return `
+    <div class="meters">
+      <div class="meter"><span class="meter-label">XP</span><span class="bar"><span class="fill xp" style="width:${(100 * p.levelXp / p.nextXp).toFixed(1)}%"></span></span><span class="meter-val">${p.levelXp} / ${p.nextXp}</span></div>
+      <div class="meter"><span class="meter-label">HP</span><span class="bar"><span class="fill hp" style="width:${p.integrity}%"></span></span><span class="meter-val${p.integrity < 30 ? ' warn' : ''}">${p.integrity}%</span></div>
+    </div>
+    <p class="sheet-note">${p.xp.toLocaleString('en-US')} XP total. HP is your Integrity — how much of the last 7 days you kept.
+      ${p.integrity < 30 ? '<span class="hp-warn">⚠ Cyberpsychosis risk.</span>' : ''}</p>
+    <h4 class="sheet-h">Attributes</h4>
+    <div class="attrs">${rows}</div>
+    <p class="sheet-note">Your class comes from your highest attribute. Tap ⋯ on a habit to choose which attribute it trains.
+      Each check-off: 10 XP, +2 per streak day (max +10), ×2 on a natural 20, +25 for a perfect day.</p>`;
+}
+
+function badgesHtml(p) {
+  const n = p.achievements.filter(a => a.unlockedOn).length;
+  return `<p class="sheet-note" style="margin:0 0 10px">${n} of ${p.achievements.length} unlocked</p>
+    <div class="badges">${p.achievements.map(a => `
+      <div class="badge${a.unlockedOn ? ' on' : ''}">
+        <span class="badge-icon">${icon(a.icon)}</span>
+        <strong>${a.name}</strong>
+        <span>${a.desc}</span>
+        <em>${a.unlockedOn ? shortDate(a.unlockedOn) : 'Locked'}</em>
+      </div>`).join('')}
+    </div>`;
+}
+
+function recordsHtml(p) {
+  const t = today();
+  const dow = (new Date(t + 'T00:00:00').getDay() + 6) % 7; // 0 = Monday
+  const start = dateAdd(t, -dow - 15 * 7);                    // 16 weeks, Monday-start columns
+  let cells = '';
+  for (let i = 0; i < 16 * 7; i++) {
+    const d = dateAdd(start, i);
+    if (d > t) { cells += '<span class="hm future"></span>'; continue; }
+    const s = p.dayStats.get(d);
+    const r = s && s.active ? s.done / s.active : 0;
+    const lv = r === 0 ? 0 : r < 0.34 ? 1 : r < 0.67 ? 2 : r < 1 ? 3 : 4;
+    cells += `<span class="hm l${lv}" title="${d}"></span>`;
+  }
+  const tiles = [[p.checks, 'Check-offs'], [p.perfectDays.size, 'Perfect days'], [p.critDays.size, 'Natural 20s'], [`${p.rate30}%`, 'Last 30 days']];
+  const rows = state.habits
+    .map(h => ({ name: h.name, best: p.perHabit[h.id] ? p.perHabit[h.id].best : 0, cur: calcStreak(h.completed) }))
+    .sort((a, b) => b.best - a.best);
+  return `<div class="tiles">${tiles.map(([v, l]) => `<div class="tile"><strong>${v}</strong><span>${l}</span></div>`).join('')}</div>
+    <h4 class="sheet-h">Last 16 weeks</h4>
+    <div class="heatmap">${cells}</div>
+    <h4 class="sheet-h">Best streaks</h4>
+    <div class="records">${rows.map(r => `<div class="rec"><span>${esc(r.name)}</span><em>${r.cur ? `now ${r.cur}` : ''}</em><strong>${r.best}</strong></div>`).join('')}</div>`;
+}
+
+function openSheet() {
+  if (!progress) return;
+  renderSheet();
+  charOverlay.classList.add('open');
+}
+
+charBlock.addEventListener('click', openSheet);
+charClose.addEventListener('click', () => charOverlay.classList.remove('open'));
+charOverlay.addEventListener('click', e => { if (e.target === charOverlay) charOverlay.classList.remove('open'); });
+sheetTabs.addEventListener('click', e => {
+  const b = e.target.closest('[data-tab]');
+  if (!b) return;
+  sheetTab = b.dataset.tab;
+  renderSheet();
+  sheetBody.scrollTop = 0;
+});
+
+// ── Celebrations — compare progress before/after a check-off ──
+function celebrate(before, after, habitId, date, rect) {
+  const key = `${habitId}|${date}`;
+  const crit = after.critDays.has(key) && !before.critDays.has(key);
+  const perfect = after.perfectDays.has(date) && !before.perfectDays.has(date);
+  const leveled = after.level > before.level;
+  const gained = after.xp - before.xp;
+
+  if (gained > 0 && rect && !reduceMotion()) floatText(`+${gained} XP`, rect, crit);
+  if (leveled) showLevelUp(after);
+  if ((perfect || leveled) && !reduceMotion()) confetti();
+
+  const msgs = [];
+  if (crit) msgs.push('NAT 20 — critical hit! ×2 XP');
+  if (perfect) msgs.push(date === today() ? 'FULL SYNC — every habit done today' : 'FULL SYNC — perfect day');
+  after.achievements.forEach((a, i) => {
+    if (a.unlockedOn && !before.achievements[i].unlockedOn && !(perfect && a.id === 'full_sync')) {
+      msgs.push(`Badge unlocked: ${a.name}`);
+    }
+  });
+  // Let the level-up screen finish before the toasts start.
+  setTimeout(() => msgs.forEach(m => toast(m)), leveled ? 1900 : 0);
+}
+
+function floatText(text, rect, crit) {
+  const el = document.createElement('div');
+  el.className = `xp-float${crit ? ' crit' : ''}`;
+  el.textContent = text;
+  el.style.left = `${rect.left + rect.width / 2}px`;
+  el.style.top = `${rect.top - 6}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function showLevelUp(p) {
+  const el = document.createElement('div');
+  el.className = 'levelup';
+  el.setAttribute('role', 'alert');
+  el.innerHTML = `<span>LEVEL UP</span><strong>${p.level}</strong><em>${esc(p.rank)}</em>`;
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+  el.addEventListener('click', close);
+  document.body.appendChild(el);
+  setTimeout(close, 1700);
+}
+
+function confetti() {
+  const colors = ['#00e5f2', '#ff2a6d', '#fcee0a', '#7d7aff'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('span');
+    c.className = 'confetti';
+    c.style.left = `${Math.random() * 100}vw`;
+    c.style.background = colors[i % colors.length];
+    c.style.setProperty('--dx', `${(Math.random() - 0.5) * 160}px`);
+    c.style.setProperty('--r', `${(Math.random() - 0.5) * 900}deg`);
+    c.style.setProperty('--d', `${1.1 + Math.random() * 0.8}s`);
+    c.style.setProperty('--delay', `${Math.random() * 0.25}s`);
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2300);
+  }
+}
+
 // ── Settings dialog ──
 function lastExportAge() {
   const last = state.settings.lastExport;
@@ -1496,6 +2088,10 @@ function updateBackupStatus() {
 }
 
 function syncSettingsUI() {
+  gameRow.hidden = !window.Game;
+  gameToggle.checked = gameOn();
+  handleInput.value = typeof state.settings.handle === 'string' ? state.settings.handle : '';
+
   const { label, stale } = lastExportAge();
   lastExportInfo.textContent = label;
   lastExportInfo.classList.toggle('warn', stale);
@@ -1526,6 +2122,19 @@ undoImportBtn.addEventListener('click', () => {
 });
 settingsOverlay.addEventListener('click', e => {
   if (e.target === settingsOverlay) settingsOverlay.classList.remove('open');
+});
+
+gameToggle.addEventListener('change', () => {
+  state.settings.gamify = gameToggle.checked;
+  saveState();
+  render();
+});
+
+handleInput.addEventListener('change', () => {
+  const v = handleInput.value.trim().slice(0, 24);
+  if (v) state.settings.handle = v; else delete state.settings.handle;
+  saveState();
+  render();
 });
 
 // ── Init ──
