@@ -81,6 +81,9 @@ Keep it flat and JSON-serializable so the whole state round-trips through one
   (false = game UI off), `settings.handle` (runner name), `settings.lastExport`,
   `settings.avatar` (`{ skin, hair, neon, petName }`, cosmetic only).
   `habit.grace` (`0 | 1 | 2`: allowed missed days per rolling 7 days, see Conventions).
+  Top-level `quests` (`{ "<monday YYYY-MM-DD>": { id, rerolled?, done? } }`): weekly side
+  quests. Written only when the user completes / undoes / rerolls; the quest of a week
+  is otherwise derived (`Game.questFor`). Validated on read, never trusted.
 - Store completions as a list of `YYYY-MM-DD` strings — makes streak math trivial.
 - **Game state is derived, never stored.** XP, levels, attributes, crits and badges
   are recomputed from `completed` by `Game.computeProgress` (game.js). Don't persist

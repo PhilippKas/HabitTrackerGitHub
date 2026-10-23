@@ -3,7 +3,7 @@
 // Note: this only manages Cache Storage (the app files). Habit data lives in
 // localStorage, which the service worker never touches.
 
-const CACHE_NAME = 'habits-v10';
+const CACHE_NAME = 'habits-v11';
 // Every file listed here must exist, or the install fails.
 const SHELL = [
   './',
