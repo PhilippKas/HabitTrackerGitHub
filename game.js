@@ -106,6 +106,56 @@
     return Math.floor((score - 10) / 2);
   }
 
+  // ── Streaks with breaks ──
+  // A habit can allow `grace` (0–2) missed days per rolling 7 days. While a
+  // streak is running, a missed day is "bridged" if fewer than `grace` breaks
+  // were used in the 6 days before it; otherwise the streak ends. Today is
+  // still open, so it never counts as a miss. The streak number counts done
+  // days only. grace 0 = the classic strict streak.
+  function graceOf(habit) {
+    const g = habit && habit.grace;
+    return g === 1 || g === 2 ? g : 0;
+  }
+
+  function streakInfo(habit, todayStr) {
+    const grace = graceOf(habit);
+    const done = new Set((habit && Array.isArray(habit.completed) ? habit.completed : [])
+      .filter(d => typeof d === 'string' && DATE_RE.test(d) && d <= todayStr));
+    const breaks = new Set();
+    const runAt = new Map();   // done date → streak length after that day
+    let run = 0, best = 0, log = [];
+
+    let first = null;
+    done.forEach(d => { if (!first || d < first) first = d; });
+    if (first) {
+      for (let d = first; d <= todayStr; d = dateAdd(d, 1)) {
+        if (done.has(d)) {
+          run++;
+          best = Math.max(best, run);
+          runAt.set(d, run);
+          continue;
+        }
+        if (d === todayStr) break;               // today is still open
+        if (run > 0 && log.filter(b => daysBetween(b, d) < 7).length < grace) {
+          breaks.add(d);                          // bridged: streak survives
+          log.push(d);
+          continue;
+        }
+        run = 0;
+        log = [];
+      }
+    }
+    const recent = [...breaks].filter(b => daysBetween(b, todayStr) < 7).length;
+    return {
+      grace,
+      current: run,
+      best,
+      breaks,
+      runAt,
+      breaksLeft: run > 0 ? Math.max(0, grace - recent) : grace,
+    };
+  }
+
   // ── The replay ──
   // Walks every day from the first check-off to today, in order, and
   // accumulates XP, streaks, perfect days and achievement unlocks.
@@ -131,6 +181,7 @@
     let xp = 0, checks = 0;
     const run = habits.map(() => 0);
     const last = habits.map(() => null);
+    const streaks = habits.map(h => streakInfo(h, todayStr));
 
     if (earliest) {
       for (let d = earliest; d <= todayStr; d = dateAdd(d, 1)) {
@@ -144,7 +195,7 @@
           done++;
           checks++;
           if (last[i] && daysBetween(last[i], d) > 7) unlock('reboot', d);
-          run[i] = last[i] === dateAdd(d, -1) ? run[i] + 1 : 1;
+          run[i] = streaks[i].runAt.get(d) || 1;   // honours allowed breaks
           last[i] = d;
 
           let gain = XP_BASE + streakBonus(run[i]);
@@ -152,7 +203,7 @@
           xp += gain;
           if (STATS.includes(h.stat)) statXp[h.stat] += gain;
           const ph = perHabit[h.id];
-          ph.xp += gain; ph.count++; ph.best = Math.max(ph.best, run[i]);
+          ph.xp += gain; ph.count++;
 
           unlock('jack_in', d);
           if (run[i] >= 3) unlock('boot', d);
@@ -182,6 +233,15 @@
       }
     }
 
+    habits.forEach((h, i) => {
+      const ph = perHabit[h.id];
+      ph.best = streaks[i].best;
+      ph.current = streaks[i].current;
+      ph.grace = streaks[i].grace;
+      ph.breaks = streaks[i].breaks;
+      ph.breaksLeft = streaks[i].breaksLeft;
+    });
+
     const lvl = levelFromXp(xp);
     const stats = {};
     STATS.forEach(s => {
@@ -202,8 +262,8 @@
       topStat: klass.stat,
       stats,
       checks,
-      integrity: completionRate(state, todayStr, 7),
-      rate30: completionRate(state, todayStr, 30),
+      integrity: completionRate(state, todayStr, 7, streaks),
+      rate30: completionRate(state, todayStr, 30, streaks),
       achievements: ACHIEVEMENTS.map(a => ({ ...a, unlockedOn: unlocked[a.id] || null })),
       perHabit,
       critDays,
@@ -216,14 +276,17 @@
   }
 
   // Share of expected check-offs done over the last `days` days, not counting
-  // today (today isn't over yet). A habit is expected from its createdAt on.
+  // today (today isn't over yet). A habit is expected from its createdAt on;
+  // an allowed break is not expected, so it doesn't lower the rate.
   // No expected check-offs → 100.
-  function completionRate(state, todayStr, days) {
+  function completionRate(state, todayStr, days, streaks) {
     const habits = (state && Array.isArray(state.habits)) ? state.habits : [];
+    const info = streaks || habits.map(h => streakInfo(h, todayStr));
     let expected = 0, done = 0;
     for (let k = 1; k <= days; k++) {
       const d = dateAdd(todayStr, -k);
-      habits.forEach(h => {
+      habits.forEach((h, i) => {
+        if (info[i].breaks.has(d)) return;
         const has = Array.isArray(h.completed) && h.completed.includes(d);
         const created = typeof h.createdAt === 'string' && DATE_RE.test(h.createdAt) ? h.createdAt : d;
         if (created <= d || has) { expected++; if (has) done++; }
@@ -235,7 +298,7 @@
   const Game = {
     fmtDate, dateAdd, daysBetween,
     STATS, STAT_INFO, ACHIEVEMENTS, d20, streakBonus, levelCost, levelFromXp, rankFor,
-    statScore, statMod, computeProgress, completionRate,
+    statScore, statMod, computeProgress, completionRate, streakInfo, graceOf,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Game;
   else root.Game = Game;

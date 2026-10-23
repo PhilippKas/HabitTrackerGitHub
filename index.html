@@ -406,6 +406,44 @@
   .cal-cell:active { transform: scale(.9); }
   .cal-cell.done { background: var(--accent); color: var(--on-accent); }
   .cal-cell.today:not(.done) { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); }
+  /* Allowed break: streak kept — dashed outline + pause bars */
+  .cal-cell.paused, .day-dot.paused .dn {
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: none;
+    outline: 1.5px dashed var(--accent);
+    outline-offset: -3px;
+    position: relative;
+  }
+  .day-dot.paused .dn::after, .cal-cell.paused::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 5px;
+    width: 7px;
+    height: 6px;
+    transform: translateX(-50%);
+    border-left: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+  }
+  .cal-cell.paused::after { bottom: 5px; width: 5px; height: 4px; border-width: 1.5px; }
+  .breaks-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    padding: 1px 6px 1px 3px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .breaks-chip .i { width: 12px; height: 12px; stroke-width: 3; }
+  .breaks-chip.none { background: var(--danger-soft); color: var(--danger); }
+  .breaks-picker { display: flex; align-items: center; gap: 4px; width: 100%; }
+  .breaks-picker .view-toggle { flex: 1; display: flex; }
+  .breaks-picker .view-toggle button { flex: 1; }
   .cal-cell.empty { background: transparent; pointer-events: none; }
 
   /* ── Card actions (behind the ⋯ button) ── */
@@ -1150,6 +1188,7 @@ const ICONS = {
   eyeOff: '<path d="M9.9 9.9a3 3 0 1 0 4.2 4.2"/><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M2 2l20 20"/>',
   sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  pause: '<path d="M9 6v12M15 6v12"/>',
   check: '<path d="M20 6L9 17l-5-5"/>',
   more: '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
   grip: '<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>',
@@ -1241,6 +1280,13 @@ function dayName(dateStr) {
 // ── Streak ──
 // Consecutive completed days counting back from today. Today not being done
 // yet doesn't break the streak — yesterday counts as the starting point.
+// Streak incl. allowed breaks (habit.grace) when game.js is loaded; otherwise
+// the strict streak below — the core app must work without game.js.
+function streakFor(habit) {
+  if (window.Game) return window.Game.streakInfo(habit, today());
+  return { current: calcStreak(habit.completed), best: 0, grace: 0, breaks: new Set(), breaksLeft: 0 };
+}
+
 function calcStreak(completed) {
   const set = new Set(completed);
   let t = today();
@@ -1559,7 +1605,9 @@ function render() {
   habitsList.innerHTML = state.habits.map(h => {
     const hid = esc(h.id);
     const completedSet = new Set(h.completed);
-    const streak = calcStreak(h.completed);
+    const si = streakFor(h);
+    const streak = si.current;
+    const bridged = si.breaks;
     const mode = getViewMode(h.id);
     const offset = getMonthOffset(h.id);
     const open = expanded.has(h.id);
@@ -1578,9 +1626,10 @@ function render() {
         if (c.empty) return '<span class="cal-cell empty"></span>';
         const done = completedSet.has(c.date);
         const isT = c.date === isToday;
-        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}${pops(c.date) ? ' pop' : ''}"
+        const pz = bridged.has(c.date);
+        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}${pz ? ' paused' : ''}${pops(c.date) ? ' pop' : ''}"
           data-habit="${hid}" data-date="${c.date}"
-          aria-label="${c.date}${done ? ' done' : ''}">${c.dayNum}</button>`;
+          aria-label="${c.date}${done ? ' done' : pz ? ' break (streak kept)' : ''}">${c.dayNum}</button>`;
       }).join('');
 
       bodyHtml = `
@@ -1603,9 +1652,10 @@ function render() {
       const dotsHtml = days.map(d => {
         const done = completedSet.has(d);
         const isT = d === isToday;
-        return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}"
+        const pz = bridged.has(d);
+        return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}${pz ? ' paused' : ''}"
           data-habit="${hid}" data-date="${d}"
-          aria-label="${d} ${done ? 'done' : 'not done'}${isT ? ' (today)' : ''}"
+          aria-label="${d} ${done ? 'done' : pz ? 'break (streak kept)' : 'not done'}${isT ? ' (today)' : ''}"
           title="${d}"><span class="dl">${dayName(d)}</span><span class="dn${pops(d) ? ' pop' : ''}">${Number(d.slice(8))}</span></button>`;
       }).join('');
       bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
@@ -1618,8 +1668,15 @@ function render() {
             class="${(stat || '') === s ? 'active' : ''}"
             aria-label="${s ? window.Game.STAT_INFO[s].name : 'No attribute'}">${s || '—'}</button>`).join('')}
         </div>` : '';
+    const breaksPicker = window.Game ? `
+        <div class="breaks-picker" role="group" aria-label="Allowed breaks">
+          <span class="stat-picker-label">Breaks</span>
+          <div class="view-toggle">${[[0, 'None'], [1, '1 / week'], [2, '2 / week']].map(([g, l]) =>
+            `<button data-grace-habit="${hid}" data-grace="${g}" class="${si.grace === g ? 'active' : ''}"
+              aria-label="${g ? `${g} allowed missed day${g === 1 ? '' : 's'} per 7 days` : 'No breaks'}">${l}</button>`).join('')}</div>
+        </div>` : '';
     const actionsHtml = open ? `
-      <div class="card-actions">${statPicker}
+      <div class="card-actions">${statPicker}${breaksPicker}
         <div class="view-toggle">
           <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">Week</button>
           <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
@@ -1643,6 +1700,9 @@ function render() {
             ${isPB ? '<span class="game pb" title="Personal best">PB</span>'
               : best > 0 ? `<span class="game best">Best ${best}</span>` : ''}
             ${stat ? `<span class="game stat-chip" title="${window.Game.STAT_INFO[stat].name}">${stat}</span>` : ''}
+            ${si.grace ? `<span class="breaks-chip${si.breaksLeft ? '' : ' none'}"
+              title="Up to ${si.grace} missed day${si.grace === 1 ? '' : 's'} per 7 days keep${si.grace === 1 ? 's' : ''} your streak">${icon('pause')}${
+              si.breaksLeft ? `${si.breaksLeft} break${si.breaksLeft === 1 ? '' : 's'} left` : 'No breaks left'}</span>` : ''}
           </span>
         </div>
         <button class="more-btn" data-more="${hid}" aria-label="More options" aria-expanded="${open}">${icon('more')}</button>
@@ -1661,6 +1721,9 @@ function render() {
   });
   habitsList.querySelectorAll('[data-stat-habit]').forEach(btn => {
     btn.addEventListener('click', () => setHabitStat(btn.dataset.statHabit, btn.dataset.stat));
+  });
+  habitsList.querySelectorAll('[data-grace-habit]').forEach(btn => {
+    btn.addEventListener('click', () => setHabitGrace(btn.dataset.graceHabit, Number(btn.dataset.grace)));
   });
   habitsList.querySelectorAll('[data-more]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1818,6 +1881,14 @@ function toggleDay(habitId, dateStr, srcEl) {
   render();
   // Celebrate only real transitions caused by this tap — never on load.
   if (idx === -1 && gameOn() && before && progress) celebrate(before, progress, habitId, dateStr, rect);
+}
+
+function setHabitGrace(habitId, grace) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  if (grace === 1 || grace === 2) habit.grace = grace; else delete habit.grace;
+  saveState();
+  render();
 }
 
 function setHabitStat(habitId, stat) {
@@ -2104,7 +2175,7 @@ function recordsHtml(p) {
   }
   const tiles = [[p.checks, 'Check-offs'], [p.perfectDays.size, 'Perfect days'], [p.critDays.size, 'Natural 20s'], [`${p.rate30}%`, 'Last 30 days']];
   const rows = state.habits
-    .map(h => ({ name: h.name, best: p.perHabit[h.id] ? p.perHabit[h.id].best : 0, cur: calcStreak(h.completed) }))
+    .map(h => ({ name: h.name, best: p.perHabit[h.id] ? p.perHabit[h.id].best : 0, cur: streakFor(h).current }))
     .sort((a, b) => b.best - a.best);
   return `<div class="tiles">${tiles.map(([v, l]) => `<div class="tile"><strong>${v}</strong><span>${l}</span></div>`).join('')}</div>
     <h4 class="sheet-h">Last 16 weeks</h4>

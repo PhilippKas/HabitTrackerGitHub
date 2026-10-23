@@ -80,6 +80,7 @@ Keep it flat and JSON-serializable so the whole state round-trips through one
   `habit.stat` (`"BODY" | "INT" | "TECH" | "COOL" | "EMP"`), `settings.gamify`
   (false = game UI off), `settings.handle` (runner name), `settings.lastExport`,
   `settings.avatar` (`{ skin, hair, neon, petName }`, cosmetic only).
+  `habit.grace` (`0 | 1 | 2`: allowed missed days per rolling 7 days, see Conventions).
 - Store completions as a list of `YYYY-MM-DD` strings — makes streak math trivial.
 - **Game state is derived, never stored.** XP, levels, attributes, crits and badges
   are recomputed from `completed` by `Game.computeProgress` (game.js). Don't persist
@@ -98,7 +99,10 @@ Keep it flat and JSON-serializable so the whole state round-trips through one
 ## Conventions
  
 - Dates are always `YYYY-MM-DD` strings in local time. Never store timestamps.
-- A streak = consecutive days up to today with a completion entry.
+- A streak = consecutive days up to today with a completion entry. With `habit.grace`
+  = N, up to N missed days per rolling 7 days are bridged (the streak survives, the
+  number counts done days only). One implementation: `Game.streakInfo` (game.js);
+  index.html falls back to the strict streak if game.js is missing.
 - Keep the UI touch-friendly: this runs on an iPhone.
 ## Deploy
  
