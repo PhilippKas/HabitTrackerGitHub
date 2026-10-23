@@ -106,6 +106,190 @@
     return Math.floor((score - 10) / 2);
   }
 
+  // ── Side quests: one real-life challenge per week ──
+  // The quest of a week is derived from the week's Monday (no storage). The
+  // pool is walked as a seeded shuffle per cycle, so every quest comes up
+  // once per cycle and never twice in a row. state.quests only records what
+  // the user did: { "<monday>": { id, rerolled?, done? } }.
+  const QUEST_XP = 75;
+  const QUEST_EPOCH = '2024-01-01'; // a Monday
+  const QUESTS = [
+    { id: 'analog',     name: 'Analog Mode',          desc: 'One evening with no screens after 9 pm.' },
+    { id: 'recipe',     name: 'New Recipe Protocol',  desc: "Cook a dish you've never made before." },
+    { id: 'reconnect',  name: 'Reconnect',            desc: "Call or meet someone you haven't talked to in months." },
+    { id: 'uncharted',  name: 'Uncharted Sector',     desc: "Walk or ride somewhere you've never been." },
+    { id: 'purge',      name: 'Data Purge',           desc: 'Delete 50 old photos or clear out one drawer.' },
+    { id: 'sunrise',    name: 'Sunrise Run',          desc: 'Be outside within 30 minutes of sunrise, once.' },
+    { id: 'gift',       name: 'Gift Protocol',        desc: 'Do something kind for someone without telling them.' },
+    { id: 'offline',    name: 'Offline Read',         desc: 'Read 30 pages of a paper book in one sitting.' },
+    { id: 'coldboot',   name: 'Cold Boot',            desc: 'End a shower with 30 seconds of cold water.' },
+    { id: 'skillchip',  name: 'Skill Chip',           desc: 'Spend one hour learning something new.' },
+    { id: 'ghost',      name: 'Ghost Mode',           desc: 'Take a 1-hour walk and leave your phone at home.' },
+    { id: 'market',     name: 'Market Run',           desc: "Buy and try a fruit or vegetable you've never eaten." },
+    { id: 'signal',     name: 'Signal Boost',         desc: 'Send someone a real thank-you message.' },
+    { id: 'lowpower',   name: 'Low Power Mode',       desc: 'Go to bed one hour earlier than usual, one night.' },
+    { id: 'hydro',      name: 'Coolant Flush',        desc: 'Drink 2 litres of water a day for 3 days.' },
+    { id: 'streetart',  name: 'Street Scan',          desc: 'Photograph 5 interesting details in your neighbourhood.' },
+    { id: 'sync',       name: 'Sync Session',         desc: 'Share a meal with someone, phones away.' },
+    { id: 'breathe',    name: 'Netrunner Rest',       desc: '10 minutes of quiet breathing outdoors.' },
+    { id: 'pushups',    name: 'Hardware Upgrade',     desc: 'Do 100 push-ups over the week, any split.' },
+    { id: 'inbox',      name: 'Clean Slate',          desc: 'Reach inbox zero or unsubscribe from 10 newsletters.' },
+    { id: 'nightwalk',  name: 'Night City Walk',      desc: 'Take an evening walk of at least 5 km.' },
+    { id: 'mixtape',    name: 'Mixtape',              desc: "Listen to a full album you've never heard, start to finish." },
+    { id: 'bugfix',     name: 'Bug Fix',              desc: "Finally do one small task you've been putting off." },
+    { id: 'local',      name: 'Local Legend',         desc: "Visit a café, shop or museum nearby you've never been to." },
+    { id: 'nosugar',    name: 'Sugar Firewall',       desc: 'One full day without added sugar.' },
+    { id: 'mentor',     name: 'Mentor Mode',          desc: 'Teach someone something you know.' },
+    { id: 'retro',      name: 'Retro Tech',           desc: 'Write a handwritten letter or postcard.' },
+    { id: 'green',      name: 'Green Grid',           desc: 'Spend two hours in nature.' },
+    { id: 'silent',     name: 'Silent Running',       desc: 'One full day without social media.' },
+    { id: 'overclock',  name: 'Overclock',            desc: 'Try a sport or workout class you have never done.' },
+    { id: 'archive',    name: 'Archive Entry',        desc: 'Write one page about your week in a journal.' },
+    { id: 'plant',      name: 'Bio Module',           desc: 'Plant something or bring home a houseplant or herbs.' },
+    { id: 'budget',     name: 'Budget Hack',          desc: 'Track every expense for three days.' },
+    { id: 'stars',      name: 'Stargazer',            desc: 'Look at the night sky for 10 minutes.' },
+    { id: 'volunteer',  name: 'Volunteer Run',        desc: 'Help out a neighbour or a good cause for an hour.' },
+    { id: 'yes',        name: 'Comfort Zone Exit',    desc: "Say yes to something you'd normally turn down." },
+  ];
+  const QUEST_BY_ID = new Map(QUESTS.map(q => [q.id, q]));
+
+  function fnv(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h;
+  }
+
+  // Monday of the week containing dateStr.
+  function weekStart(dateStr) {
+    return dateAdd(dateStr, -((new Date(dateStr + 'T00:00:00').getDay() + 6) % 7));
+  }
+
+  // Seeded shuffle of the pool for one cycle (mulberry32 + Fisher–Yates).
+  function cyclePerm(c) {
+    let a = fnv(`cycle|${c}`);
+    const rnd = () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const idx = QUESTS.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    return idx;
+  }
+
+  // The quest a week starts with (before any reroll).
+  function baseQuest(weekKey) {
+    const w = Math.floor(daysBetween(QUEST_EPOCH, weekKey) / 7);
+    const n = QUESTS.length;
+    const c = Math.floor(w / n), pos = ((w % n) + n) % n;
+    const perm = cyclePerm(c);
+    // never the same quest twice in a row across a cycle boundary
+    if (pos <= 1) {
+      const prevLast = cyclePerm(c - 1)[n - 1];
+      if (perm[0] === prevLast) [perm[0], perm[1]] = [perm[1], perm[0]];
+    }
+    return QUESTS[perm[pos]];
+  }
+
+  function questRecord(state, weekKey) {
+    const all = state && state.quests;
+    const r = all && typeof all === 'object' ? all[weekKey] : null;
+    return r && typeof r === 'object' ? r : null;
+  }
+
+  function validDone(d, weekKey, todayStr) {
+    return typeof d === 'string' && DATE_RE.test(d) && d >= weekKey && d <= dateAdd(weekKey, 6) && d <= todayStr;
+  }
+
+  // What the user sees for a week.
+  function questFor(state, weekKey, todayStr) {
+    const rec = questRecord(state, weekKey);
+    const quest = (rec && QUEST_BY_ID.get(rec.id)) || baseQuest(weekKey);
+    const rerolled = !!(rec && rec.rerolled === true);
+    return {
+      weekKey,
+      quest,
+      rerolled,
+      done: rec && validDone(rec.done, weekKey, todayStr) ? rec.done : null,
+      canReroll: !rerolled,
+    };
+  }
+
+  // Replacement for a reroll: different from this week's quest and from the
+  // quests shown the week before and after.
+  function rerollQuest(state, weekKey) {
+    const avoid = new Set([
+      questFor(state, weekKey, weekKey).quest.id,
+      questFor(state, dateAdd(weekKey, -7), weekKey).quest.id,
+      baseQuest(dateAdd(weekKey, 7)).id,
+    ]);
+    let i = fnv(`${weekKey}|reroll`) % QUESTS.length;
+    while (avoid.has(QUESTS[i].id)) i = (i + 1) % QUESTS.length;
+    return QUESTS[i];
+  }
+
+  // Completed quests (valid only), newest first.
+  function questLog(state, todayStr) {
+    const all = state && state.quests && typeof state.quests === 'object' ? state.quests : {};
+    return Object.keys(all)
+      .filter(k => DATE_RE.test(k) && weekStart(k) === k)
+      .map(k => questFor(state, k, todayStr))
+      .filter(q => q.done)
+      .sort((a, b) => (a.weekKey < b.weekKey ? 1 : -1));
+  }
+
+  // ── Streaks with breaks ──
+  // A habit can allow `grace` (0–2) missed days per rolling 7 days. While a
+  // streak is running, a missed day is "bridged" if fewer than `grace` breaks
+  // were used in the 6 days before it; otherwise the streak ends. Today is
+  // still open, so it never counts as a miss. The streak number counts done
+  // days only. grace 0 = the classic strict streak.
+  function graceOf(habit) {
+    const g = habit && habit.grace;
+    return g === 1 || g === 2 ? g : 0;
+  }
+
+  function streakInfo(habit, todayStr) {
+    const grace = graceOf(habit);
+    const done = new Set((habit && Array.isArray(habit.completed) ? habit.completed : [])
+      .filter(d => typeof d === 'string' && DATE_RE.test(d) && d <= todayStr));
+    const breaks = new Set();
+    const runAt = new Map();   // done date → streak length after that day
+    let run = 0, best = 0, log = [];
+
+    let first = null;
+    done.forEach(d => { if (!first || d < first) first = d; });
+    if (first) {
+      for (let d = first; d <= todayStr; d = dateAdd(d, 1)) {
+        if (done.has(d)) {
+          run++;
+          best = Math.max(best, run);
+          runAt.set(d, run);
+          continue;
+        }
+        if (d === todayStr) break;               // today is still open
+        if (run > 0 && log.filter(b => daysBetween(b, d) < 7).length < grace) {
+          breaks.add(d);                          // bridged: streak survives
+          log.push(d);
+          continue;
+        }
+        run = 0;
+        log = [];
+      }
+    }
+    const recent = [...breaks].filter(b => daysBetween(b, todayStr) < 7).length;
+    return {
+      grace,
+      current: run,
+      best,
+      breaks,
+      runAt,
+      breaksLeft: run > 0 ? Math.max(0, grace - recent) : grace,
+    };
+  }
+
   // ── The replay ──
   // Walks every day from the first check-off to today, in order, and
   // accumulates XP, streaks, perfect days and achievement unlocks.
@@ -131,6 +315,7 @@
     let xp = 0, checks = 0;
     const run = habits.map(() => 0);
     const last = habits.map(() => null);
+    const streaks = habits.map(h => streakInfo(h, todayStr));
 
     if (earliest) {
       for (let d = earliest; d <= todayStr; d = dateAdd(d, 1)) {
@@ -144,7 +329,7 @@
           done++;
           checks++;
           if (last[i] && daysBetween(last[i], d) > 7) unlock('reboot', d);
-          run[i] = last[i] === dateAdd(d, -1) ? run[i] + 1 : 1;
+          run[i] = streaks[i].runAt.get(d) || 1;   // honours allowed breaks
           last[i] = d;
 
           let gain = XP_BASE + streakBonus(run[i]);
@@ -152,7 +337,7 @@
           xp += gain;
           if (STATS.includes(h.stat)) statXp[h.stat] += gain;
           const ph = perHabit[h.id];
-          ph.xp += gain; ph.count++; ph.best = Math.max(ph.best, run[i]);
+          ph.xp += gain; ph.count++;
 
           unlock('jack_in', d);
           if (run[i] >= 3) unlock('boot', d);
@@ -182,6 +367,19 @@
       }
     }
 
+    // Side quests: +QUEST_XP per completed quest
+    const quests = questLog(state, todayStr);
+    xp += quests.length * QUEST_XP;
+
+    habits.forEach((h, i) => {
+      const ph = perHabit[h.id];
+      ph.best = streaks[i].best;
+      ph.current = streaks[i].current;
+      ph.grace = streaks[i].grace;
+      ph.breaks = streaks[i].breaks;
+      ph.breaksLeft = streaks[i].breaksLeft;
+    });
+
     const lvl = levelFromXp(xp);
     const stats = {};
     STATS.forEach(s => {
@@ -202,10 +400,12 @@
       topStat: klass.stat,
       stats,
       checks,
-      integrity: completionRate(state, todayStr, 7),
-      rate30: completionRate(state, todayStr, 30),
+      integrity: completionRate(state, todayStr, 7, streaks),
+      rate30: completionRate(state, todayStr, 30, streaks),
       achievements: ACHIEVEMENTS.map(a => ({ ...a, unlockedOn: unlocked[a.id] || null })),
       perHabit,
+      questsDone: quests.length,
+      questLog: quests,
       critDays,
       perfectDays,
       dayStats,
@@ -216,14 +416,17 @@
   }
 
   // Share of expected check-offs done over the last `days` days, not counting
-  // today (today isn't over yet). A habit is expected from its createdAt on.
+  // today (today isn't over yet). A habit is expected from its createdAt on;
+  // an allowed break is not expected, so it doesn't lower the rate.
   // No expected check-offs → 100.
-  function completionRate(state, todayStr, days) {
+  function completionRate(state, todayStr, days, streaks) {
     const habits = (state && Array.isArray(state.habits)) ? state.habits : [];
+    const info = streaks || habits.map(h => streakInfo(h, todayStr));
     let expected = 0, done = 0;
     for (let k = 1; k <= days; k++) {
       const d = dateAdd(todayStr, -k);
-      habits.forEach(h => {
+      habits.forEach((h, i) => {
+        if (info[i].breaks.has(d)) return;
         const has = Array.isArray(h.completed) && h.completed.includes(d);
         const created = typeof h.createdAt === 'string' && DATE_RE.test(h.createdAt) ? h.createdAt : d;
         if (created <= d || has) { expected++; if (has) done++; }
@@ -235,7 +438,8 @@
   const Game = {
     fmtDate, dateAdd, daysBetween,
     STATS, STAT_INFO, ACHIEVEMENTS, d20, streakBonus, levelCost, levelFromXp, rankFor,
-    statScore, statMod, computeProgress, completionRate,
+    statScore, statMod, computeProgress, completionRate, streakInfo, graceOf,
+    QUESTS, QUEST_XP, weekStart, questFor, rerollQuest, questLog, baseQuest,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Game;
   else root.Game = Game;

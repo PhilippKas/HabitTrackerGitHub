@@ -406,6 +406,44 @@
   .cal-cell:active { transform: scale(.9); }
   .cal-cell.done { background: var(--accent); color: var(--on-accent); }
   .cal-cell.today:not(.done) { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); }
+  /* Allowed break: streak kept — dashed outline + pause bars */
+  .cal-cell.paused, .day-dot.paused .dn {
+    background: var(--accent-soft);
+    color: var(--accent);
+    box-shadow: none;
+    outline: 1.5px dashed var(--accent);
+    outline-offset: -3px;
+    position: relative;
+  }
+  .day-dot.paused .dn::after, .cal-cell.paused::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 5px;
+    width: 7px;
+    height: 6px;
+    transform: translateX(-50%);
+    border-left: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+  }
+  .cal-cell.paused::after { bottom: 5px; width: 5px; height: 4px; border-width: 1.5px; }
+  .breaks-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    padding: 1px 6px 1px 3px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .breaks-chip .i { width: 12px; height: 12px; stroke-width: 3; }
+  .breaks-chip.none { background: var(--danger-soft); color: var(--danger); }
+  .breaks-picker { display: flex; align-items: center; gap: 4px; width: 100%; }
+  .breaks-picker .view-toggle { flex: 1; display: flex; }
+  .breaks-picker .view-toggle button { flex: 1; }
   .cal-cell.empty { background: transparent; pointer-events: none; }
 
   /* ── Card actions (behind the ⋯ button) ── */
@@ -894,6 +932,40 @@
   .levelup .up { background: rgba(255,255,255,.1); color: #fff; }
   .levelup .up b { color: var(--neon-yellow); }
 
+  /* Side quest card */
+  .quest-card {
+    padding: 16px 18px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--neon-yellow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .quest-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--neon-cyan-text); }
+  .quest-head .i { width: 15px; height: 15px; }
+  .quest-head em { margin-left: auto; font-style: normal; font-weight: 700; letter-spacing: .04em; color: var(--text-3); text-transform: uppercase; }
+  .quest-name { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .quest-desc { font-size: 15px; line-height: 1.4; color: var(--text-2); }
+  .quest-actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .quest-btn {
+    flex: 1;
+    min-height: 42px;
+    font-size: 15px;
+    background: var(--neon-ink);
+    color: var(--neon-yellow);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    border-radius: 0;
+  }
+  .quest-reroll { min-height: 42px; padding: 0 14px; font-size: 14px; background: var(--surface-2); color: var(--text-2); }
+  .quest-reroll .i { width: 16px; height: 16px; }
+  .quest-reroll:disabled { opacity: .5; }
+  .quest-done { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: var(--neon-cyan-text); }
+  .quest-done .i { width: 18px; height: 18px; stroke-width: 3; }
+  .quest-link { margin-left: auto; border: none; background: none; padding: 8px 4px; font-size: 14px; font-weight: 600; color: var(--text-3); text-decoration: underline; }
+  .quest-log .rec em { color: var(--neon-cyan-text); font-weight: 700; }
+
   /* Celebrations */
   .xp-float {
     position: fixed;
@@ -983,6 +1055,8 @@
       <span class="char-chev" data-icon="right"></span>
     </button>
   </section>
+
+  <section class="game quest-card" id="questCard" hidden></section>
 
   <form class="add-form" id="addForm" autocomplete="off">
     <input type="text" id="habitInput" placeholder="Add a new habit" maxlength="80" aria-label="New habit name" enterkeyhint="done">
@@ -1117,6 +1191,7 @@ const ringBar     = $('#ringBar');
 const summaryTitle = $('#summaryTitle');
 const summarySub  = $('#summarySub');
 const backupStatus = $('#backupStatus');
+const questCard   = $('#questCard');
 const RING_C = 2 * Math.PI * 19; // circumference of the progress ring
 const charBlock   = $('#charBlock');
 const charAvatar  = $('#charAvatar');
@@ -1150,6 +1225,7 @@ const ICONS = {
   eyeOff: '<path d="M9.9 9.9a3 3 0 1 0 4.2 4.2"/><path d="M10.7 5.1A10.4 10.4 0 0 1 12 5c7 0 10 7 10 7a13.2 13.2 0 0 1-1.7 2.7"/><path d="M6.6 6.6A13.5 13.5 0 0 0 2 12s3 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M2 2l20 20"/>',
   sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  pause: '<path d="M9 6v12M15 6v12"/>',
   check: '<path d="M20 6L9 17l-5-5"/>',
   more: '<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
   grip: '<circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/>',
@@ -1179,6 +1255,7 @@ const ICONS = {
   star: '<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
   dice: '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M7.5 9.5h9L12 17z"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  quest: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   layers: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 12l10 5 10-5M2 17l10 5 10-5"/>',
 };
 const SOLID_ICONS = new Set(['more', 'grip', 'flame']);
@@ -1241,6 +1318,13 @@ function dayName(dateStr) {
 // ── Streak ──
 // Consecutive completed days counting back from today. Today not being done
 // yet doesn't break the streak — yesterday counts as the starting point.
+// Streak incl. allowed breaks (habit.grace) when game.js is loaded; otherwise
+// the strict streak below — the core app must work without game.js.
+function streakFor(habit) {
+  if (window.Game) return window.Game.streakInfo(habit, today());
+  return { current: calcStreak(habit.completed), best: 0, grace: 0, breaks: new Set(), breaksLeft: 0 };
+}
+
 function calcStreak(completed) {
   const set = new Set(completed);
   let t = today();
@@ -1541,6 +1625,7 @@ function render() {
   progress = window.Game ? window.Game.computeProgress(state, today()) : null;
   renderSummary();
   renderCharacter();
+  renderQuest();
   updateBackupStatus();
 
   if (state.habits.length === 0) {
@@ -1559,7 +1644,9 @@ function render() {
   habitsList.innerHTML = state.habits.map(h => {
     const hid = esc(h.id);
     const completedSet = new Set(h.completed);
-    const streak = calcStreak(h.completed);
+    const si = streakFor(h);
+    const streak = si.current;
+    const bridged = si.breaks;
     const mode = getViewMode(h.id);
     const offset = getMonthOffset(h.id);
     const open = expanded.has(h.id);
@@ -1578,9 +1665,10 @@ function render() {
         if (c.empty) return '<span class="cal-cell empty"></span>';
         const done = completedSet.has(c.date);
         const isT = c.date === isToday;
-        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}${pops(c.date) ? ' pop' : ''}"
+        const pz = bridged.has(c.date);
+        return `<button class="cal-cell${done ? ' done' : ''}${isT ? ' today' : ''}${pz ? ' paused' : ''}${pops(c.date) ? ' pop' : ''}"
           data-habit="${hid}" data-date="${c.date}"
-          aria-label="${c.date}${done ? ' done' : ''}">${c.dayNum}</button>`;
+          aria-label="${c.date}${done ? ' done' : pz ? ' break (streak kept)' : ''}">${c.dayNum}</button>`;
       }).join('');
 
       bodyHtml = `
@@ -1603,9 +1691,10 @@ function render() {
       const dotsHtml = days.map(d => {
         const done = completedSet.has(d);
         const isT = d === isToday;
-        return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}"
+        const pz = bridged.has(d);
+        return `<button class="day-dot${done ? ' done' : ''}${isT ? ' today' : ''}${pz ? ' paused' : ''}"
           data-habit="${hid}" data-date="${d}"
-          aria-label="${d} ${done ? 'done' : 'not done'}${isT ? ' (today)' : ''}"
+          aria-label="${d} ${done ? 'done' : pz ? 'break (streak kept)' : 'not done'}${isT ? ' (today)' : ''}"
           title="${d}"><span class="dl">${dayName(d)}</span><span class="dn${pops(d) ? ' pop' : ''}">${Number(d.slice(8))}</span></button>`;
       }).join('');
       bodyHtml = `<div class="day-grid">${dotsHtml}</div>`;
@@ -1618,8 +1707,15 @@ function render() {
             class="${(stat || '') === s ? 'active' : ''}"
             aria-label="${s ? window.Game.STAT_INFO[s].name : 'No attribute'}">${s || '—'}</button>`).join('')}
         </div>` : '';
+    const breaksPicker = window.Game ? `
+        <div class="breaks-picker" role="group" aria-label="Allowed breaks">
+          <span class="stat-picker-label">Breaks</span>
+          <div class="view-toggle">${[[0, 'None'], [1, '1 / week'], [2, '2 / week']].map(([g, l]) =>
+            `<button data-grace-habit="${hid}" data-grace="${g}" class="${si.grace === g ? 'active' : ''}"
+              aria-label="${g ? `${g} allowed missed day${g === 1 ? '' : 's'} per 7 days` : 'No breaks'}">${l}</button>`).join('')}</div>
+        </div>` : '';
     const actionsHtml = open ? `
-      <div class="card-actions">${statPicker}
+      <div class="card-actions">${statPicker}${breaksPicker}
         <div class="view-toggle">
           <button data-view-week="${hid}" class="${mode === 'week' ? 'active' : ''}" aria-label="Week view">Week</button>
           <button data-view-month="${hid}" class="${mode === 'month' ? 'active' : ''}" aria-label="Month view">Month</button>
@@ -1643,6 +1739,9 @@ function render() {
             ${isPB ? '<span class="game pb" title="Personal best">PB</span>'
               : best > 0 ? `<span class="game best">Best ${best}</span>` : ''}
             ${stat ? `<span class="game stat-chip" title="${window.Game.STAT_INFO[stat].name}">${stat}</span>` : ''}
+            ${si.grace ? `<span class="breaks-chip${si.breaksLeft ? '' : ' none'}"
+              title="Up to ${si.grace} missed day${si.grace === 1 ? '' : 's'} per 7 days keep${si.grace === 1 ? 's' : ''} your streak">${icon('pause')}${
+              si.breaksLeft ? `${si.breaksLeft} break${si.breaksLeft === 1 ? '' : 's'} left` : 'No breaks left'}</span>` : ''}
           </span>
         </div>
         <button class="more-btn" data-more="${hid}" aria-label="More options" aria-expanded="${open}">${icon('more')}</button>
@@ -1661,6 +1760,9 @@ function render() {
   });
   habitsList.querySelectorAll('[data-stat-habit]').forEach(btn => {
     btn.addEventListener('click', () => setHabitStat(btn.dataset.statHabit, btn.dataset.stat));
+  });
+  habitsList.querySelectorAll('[data-grace-habit]').forEach(btn => {
+    btn.addEventListener('click', () => setHabitGrace(btn.dataset.graceHabit, Number(btn.dataset.grace)));
   });
   habitsList.querySelectorAll('[data-more]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1818,6 +1920,14 @@ function toggleDay(habitId, dateStr, srcEl) {
   render();
   // Celebrate only real transitions caused by this tap — never on load.
   if (idx === -1 && gameOn() && before && progress) celebrate(before, progress, habitId, dateStr, rect);
+}
+
+function setHabitGrace(habitId, grace) {
+  const habit = state.habits.find(h => h.id === habitId);
+  if (!habit) return;
+  if (grace === 1 || grace === 2) habit.grace = grace; else delete habit.grace;
+  saveState();
+  render();
 }
 
 function setHabitStat(habitId, stat) {
@@ -2104,13 +2214,17 @@ function recordsHtml(p) {
   }
   const tiles = [[p.checks, 'Check-offs'], [p.perfectDays.size, 'Perfect days'], [p.critDays.size, 'Natural 20s'], [`${p.rate30}%`, 'Last 30 days']];
   const rows = state.habits
-    .map(h => ({ name: h.name, best: p.perHabit[h.id] ? p.perHabit[h.id].best : 0, cur: calcStreak(h.completed) }))
+    .map(h => ({ name: h.name, best: p.perHabit[h.id] ? p.perHabit[h.id].best : 0, cur: streakFor(h).current }))
     .sort((a, b) => b.best - a.best);
   return `<div class="tiles">${tiles.map(([v, l]) => `<div class="tile"><strong>${v}</strong><span>${l}</span></div>`).join('')}</div>
     <h4 class="sheet-h">Last 16 weeks</h4>
     <div class="heatmap">${cells}</div>
     <h4 class="sheet-h">Best streaks</h4>
-    <div class="records">${rows.map(r => `<div class="rec"><span>${esc(r.name)}</span><em>${r.cur ? `now ${r.cur}` : ''}</em><strong>${r.best}</strong></div>`).join('')}</div>`;
+    <div class="records">${rows.map(r => `<div class="rec"><span>${esc(r.name)}</span><em>${r.cur ? `now ${r.cur}` : ''}</em><strong>${r.best}</strong></div>`).join('')}</div>
+    <h4 class="sheet-h">Side quests · ${p.questsDone} completed</h4>
+    ${p.questLog.length ? `<div class="records quest-log">${p.questLog.map(q =>
+      `<div class="rec"><span>${esc(q.quest.name)}</span><em>week of ${shortDate(q.weekKey)}</em><strong>✓</strong></div>`).join('')}</div>`
+      : '<p class="sheet-note" style="margin-top:0">No side quests completed yet — one new quest every Monday.</p>'}`;
 }
 
 function openSheet() {
@@ -2128,6 +2242,79 @@ sheetTabs.addEventListener('click', e => {
   sheetTab = b.dataset.tab;
   renderSheet();
   sheetBody.scrollTop = 0;
+});
+
+// ── Side quests (one per week, see game.js) ──
+function renderQuest() {
+  const G = window.Game;
+  if (!G || !gameOn()) { questCard.hidden = true; return; }
+  const t = today(), wk = G.weekStart(t), q = G.questFor(state, wk, t);
+  const left = daysBetween(t, dateAdd(wk, 6));        // 0 on Sunday
+  const when = left === 0 ? 'Ends today' : left === 1 ? 'Ends tomorrow' : `${left + 1} days left`;
+  questCard.hidden = false;
+  questCard.innerHTML = `
+    <div class="quest-head">${icon('quest')}<span>SIDE QUEST</span><em>${q.done ? 'Completed' : when}</em></div>
+    <strong class="quest-name">${esc(q.quest.name)}</strong>
+    <p class="quest-desc">${esc(q.quest.desc)}</p>
+    <div class="quest-actions">${q.done
+      ? `<span class="quest-done">${icon('check')}Completed · +${G.QUEST_XP} XP</span>
+         <button class="quest-link" data-quest="undo">Undo</button>`
+      : `<button class="btn quest-btn" data-quest="done">Quest complete</button>
+         <button class="btn quest-reroll" data-quest="reroll" ${q.canReroll ? '' : 'disabled'}
+           aria-label="${q.canReroll ? 'Swap for a different quest (once per week)' : 'Already rerolled this week'}">${
+           q.canReroll ? `${icon('refresh')}Reroll` : 'Rerolled'}</button>`}
+    </div>`;
+}
+
+function questWeek() {
+  const t = today(), wk = window.Game.weekStart(t);
+  if (!state.quests || typeof state.quests !== 'object') state.quests = {};
+  return { t, wk, q: window.Game.questFor(state, wk, t) };
+}
+
+function completeQuest(rect) {
+  const before = progress;
+  const { t, wk, q } = questWeek();
+  state.quests[wk] = { ...(state.quests[wk] || {}), id: q.quest.id, done: t };
+  saveState();
+  render();
+  const after = progress;
+  if (!before || !after || !gameOn()) return;
+  const leveled = after.level > before.level;
+  if (rect && !reduceMotion()) floatText(`+${after.xp - before.xp} XP`, rect, false);
+  if (leveled) showLevelUp(after, before);
+  if (!reduceMotion()) confetti();
+  setTimeout(() => toast(`Side quest complete: ${q.quest.name}`), leveled ? 2800 : 0);
+}
+
+function undoQuest() {
+  const { wk } = questWeek();
+  const rec = state.quests[wk];
+  if (!rec) return;
+  if (rec.rerolled) delete rec.done; else delete state.quests[wk];
+  if (!Object.keys(state.quests).length) delete state.quests;
+  saveState();
+  render();
+}
+
+async function rerollQuestNow() {
+  const { wk, q } = questWeek();
+  if (!q.canReroll) return;
+  const ok = await confirm('Swap this week’s quest?', 'You get one reroll per week.', 'Reroll');
+  if (!ok) { if (!Object.keys(state.quests).length) delete state.quests; return; }
+  const next = window.Game.rerollQuest(state, wk);
+  state.quests[wk] = { id: next.id, rerolled: true };
+  saveState();
+  render();
+  toast(`New side quest: ${next.name}`);
+}
+
+questCard.addEventListener('click', e => {
+  const b = e.target.closest('[data-quest]');
+  if (!b || !window.Game) return;
+  if (b.dataset.quest === 'done') completeQuest(b.getBoundingClientRect());
+  else if (b.dataset.quest === 'undo') undoQuest();
+  else if (b.dataset.quest === 'reroll') rerollQuestNow();
 });
 
 // ── Celebrations — compare progress before/after a check-off ──
